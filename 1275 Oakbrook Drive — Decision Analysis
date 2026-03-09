@@ -1,0 +1,204 @@
+import { useState } from "react";
+
+const Section = ({ title, children, defaultOpen = true }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ marginBottom: 24, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{ padding: "12px 16px", background: "#1e293b", color: "#fff", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15, fontWeight: 600 }}
+      >
+        {title}
+        <span style={{ fontSize: 12 }}>{open ? "▼" : "▶"}</span>
+      </div>
+      {open && <div style={{ padding: 16 }}>{children}</div>}
+    </div>
+  );
+};
+
+const Row = ({ label, value, onChange, prefix = "", suffix = "", note, bold }) => (
+  <div style={{ display: "flex", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
+    <label style={{ width: 260, fontSize: 13, fontWeight: bold ? 700 : 400, color: bold ? "#1e293b" : "#374151" }}>{label}</label>
+    {onChange ? (
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {prefix && <span style={{ fontSize: 13, color: "#6b7280" }}>{prefix}</span>}
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value) || 0)}
+          style={{ width: 100, padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13, textAlign: "right" }}
+        />
+        {suffix && <span style={{ fontSize: 13, color: "#6b7280" }}>{suffix}</span>}
+      </div>
+    ) : (
+      <span style={{ fontSize: 13, fontWeight: bold ? 700 : 600, color: bold ? "#1e293b" : "#059669" }}>
+        {prefix}{typeof value === "number" ? value.toLocaleString("en-US", { maximumFractionDigits: 0 }) : value}{suffix}
+      </span>
+    )}
+    {note && <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 8 }}>{note}</span>}
+  </div>
+);
+
+const Score = ({ label, value, onChange }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+    <label style={{ width: 200, fontSize: 13 }}>{label}</label>
+    <div style={{ display: "flex", gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <div
+          key={n}
+          onClick={() => onChange(n)}
+          style={{
+            width: 28, height: 28, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 600, cursor: "pointer",
+            background: value >= n ? (n <= 2 ? "#fca5a5" : n <= 3 ? "#fcd34d" : "#86efac") : "#f3f4f6",
+            color: value >= n ? "#1e293b" : "#9ca3af",
+            border: value === n ? "2px solid #1e293b" : "1px solid #d1d5db"
+          }}
+        >
+          {n}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export default function OakbrookTool() {
+  // Cost model inputs
+  const [rentPsf, setRentPsf] = useState(7.5);
+  const [nnnPsf, setNnnPsf] = useState(2.5);
+  const [leaseSf, setLeaseSf] = useState(43790);
+  const [tiPsf, setTiPsf] = useState(10);
+  const [tiAmortYrs, setTiAmortYrs] = useState(3);
+  const [utilMonth, setUtilMonth] = useState(3500);
+  const [moveCost, setMoveCost] = useState(25000);
+  const [downtime, setDowntime] = useState(5);
+
+  // Existing cost
+  const [existRentTotal, setExistRentTotal] = useState(0);
+
+  // Revenue model
+  const [targetArr, setTargetArr] = useState(10.4);
+  const [revPerSf, setRevPerSf] = useState(0);
+
+  // Lease terms
+  const [termYrs, setTermYrs] = useState(3);
+
+  // Decision matrix scores
+  const [scores, setScores] = useState({
+    fit: 3, capital: 3, ops: 3, flex: 3, make: 3, lease: 3
+  });
+  const weights = { fit: 25, capital: 20, ops: 15, flex: 15, make: 15, lease: 10 };
+
+  // Calculations
+  const annualRent = leaseSf * rentPsf;
+  const annualNnn = leaseSf * nnnPsf;
+  const annualUtil = utilMonth * 12;
+  const totalTi = leaseSf * tiPsf;
+  const annualTiAmort = tiAmortYrs > 0 ? totalTi / tiAmortYrs : 0;
+  const annualLoaded = annualRent + annualNnn + annualUtil + annualTiAmort;
+  const monthlyLoaded = annualLoaded / 12;
+  const loadedPsf = leaseSf > 0 ? annualLoaded / leaseSf : 0;
+  const moveAmort = termYrs > 0 ? (moveCost + downtime * (targetArr * 1e6 / 365)) / termYrs : 0;
+  const totalAnnualCost = annualLoaded + moveAmort;
+
+  const incrementalRent = annualRent + annualNnn - existRentTotal;
+  const revenueNeeded = totalAnnualCost;
+  const impliedRevPsf = leaseSf > 0 ? totalAnnualCost / leaseSf : 0;
+
+  // Decision matrix
+  const weightedTotal = Object.keys(scores).reduce((sum, k) => sum + scores[k] * weights[k], 0);
+  const maxScore = Object.values(weights).reduce((a, b) => a + b, 0) * 5;
+  const pct = maxScore > 0 ? (weightedTotal / maxScore) * 100 : 0;
+
+  const verdict = pct >= 75 ? { text: "Strong Go", color: "#059669", bg: "#ecfdf5" }
+    : pct >= 55 ? { text: "Conditional Go", color: "#d97706", bg: "#fffbeb" }
+    : { text: "Pause / Rethink", color: "#dc2626", bg: "#fef2f2" };
+
+  return (
+    <div style={{ fontFamily: "-apple-system, sans-serif", maxWidth: 720, margin: "0 auto", padding: 16 }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#1e293b", margin: 0 }}>1275 Oakbrook Drive — Decision Analysis</h1>
+        <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 0" }}>Cost model + weighted decision matrix. Edit inputs to match your actuals.</p>
+      </div>
+
+      <Section title="1. Fully Loaded Cost Model">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8, textTransform: "uppercase" }}>New Space — 1275 Oakbrook</div>
+            <Row label="Leasable SF" value={leaseSf} onChange={setLeaseSf} suffix="SF" />
+            <Row label="Base rent" value={rentPsf} onChange={setRentPsf} prefix="$" suffix="/SF/yr" />
+            <Row label="NNN estimate" value={nnnPsf} onChange={setNnnPsf} prefix="$" suffix="/SF/yr" />
+            <Row label="Utilities" value={utilMonth} onChange={setUtilMonth} prefix="$" suffix="/mo" />
+            <Row label="TI (tenant improvement)" value={tiPsf} onChange={setTiPsf} prefix="$" suffix="/SF" />
+            <Row label="TI amortization" value={tiAmortYrs} onChange={setTiAmortYrs} suffix="yrs" />
+            <Row label="Lease term" value={termYrs} onChange={setTermYrs} suffix="yrs" />
+            <hr style={{ margin: "12px 0", border: "none", borderTop: "1px solid #e5e7eb" }} />
+            <Row label="Moving cost (one-time)" value={moveCost} onChange={setMoveCost} prefix="$" />
+            <Row label="Est. downtime during move" value={downtime} onChange={setDowntime} suffix="days" />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8, textTransform: "uppercase" }}>Existing Facilities</div>
+            <Row label="Current total annual rent (all locations)" value={existRentTotal} onChange={setExistRentTotal} prefix="$" note="Enter if known" />
+            <div style={{ marginTop: 24, fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8, textTransform: "uppercase" }}>Revenue Context</div>
+            <Row label="Target ARR" value={targetArr} onChange={setTargetArr} prefix="$" suffix="M" />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 20, padding: 16, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#1e293b" }}>Annual Cost Summary — 1275 Oakbrook</div>
+          <Row label="Base rent" value={annualRent} prefix="$" />
+          <Row label="NNN / OpEx" value={annualNnn} prefix="$" />
+          <Row label="Utilities" value={annualUtil} prefix="$" />
+          <Row label="TI amortized" value={annualTiAmort} prefix="$" />
+          <Row label="Move + downtime amortized" value={moveAmort} prefix="$" />
+          <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid #cbd5e1" }} />
+          <Row label="Total annual loaded cost" value={totalAnnualCost} prefix="$" bold />
+          <Row label="Monthly loaded cost" value={monthlyLoaded} prefix="$" bold />
+          <Row label="Loaded cost per SF" value={`$${loadedPsf.toFixed(2)}`} bold />
+          {existRentTotal > 0 && <Row label="Incremental rent vs. existing" value={incrementalRent} prefix="$" bold />}
+          <Row label="Cost as % of target ARR" value={`${((totalAnnualCost / (targetArr * 1e6)) * 100).toFixed(1)}%`} bold />
+        </div>
+      </Section>
+
+      <Section title="2. Weighted Decision Matrix" defaultOpen={true}>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>Rate each factor 1 (weak/risky) to 5 (strong/favorable). Weights reflect relative importance.</p>
+        {[
+          ["fit", "Strategic fit (capacity vs. growth)", 25],
+          ["capital", "Capital efficiency (cost vs. revenue unlock)", 20],
+          ["ops", "Operational leverage (proximity, workflow)", 15],
+          ["flex", "Flexibility vs. commitment (term/TI)", 15],
+          ["make", "Make-vs-buy (is new space the right fix?)", 15],
+          ["lease", "Lease alignment (risk management)", 10],
+        ].map(([k, label, w]) => (
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Score label={`${label}`} value={scores[k]} onChange={(v) => setScores({ ...scores, [k]: v })} />
+            <span style={{ fontSize: 11, color: "#9ca3af", width: 40 }}>×{w}%</span>
+          </div>
+        ))}
+
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 8, background: verdict.bg, border: `2px solid ${verdict.color}`, textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: verdict.color }}>{verdict.text}</div>
+          <div style={{ fontSize: 14, color: "#374151", marginTop: 4 }}>
+            Weighted score: {weightedTotal} / {maxScore} ({pct.toFixed(0)}%)
+          </div>
+        </div>
+      </Section>
+
+      <Section title="3. Key Questions to Resolve" defaultOpen={false}>
+        <div style={{ fontSize: 13, lineHeight: 1.7, color: "#374151" }}>
+          {[
+            "What's the unit production model? (units/mo at target ARR → SF needed for assembly, staging, shipping)",
+            "What are current fully loaded rents across 1346-170B, 1346-160, and 1256?",
+            "What's the actual bottleneck — assembly floor, warehouse, or office/engineering headcount?",
+            "Landlord appetite for TI on a 3-yr vs. 5-yr term? Get both quotes.",
+            "Can you negotiate a 3+2 structure with TI closer to 5-yr levels?",
+            "What's the 2029 plan — full consolidation, new HQ, or renew in place?",
+            "Funding timeline: does signing a lease help or hurt the raise narrative?",
+          ].map((q, i) => (
+            <div key={i} style={{ paddingLeft: 16, textIndent: -16, marginBottom: 4 }}>☐ {q}</div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+}
