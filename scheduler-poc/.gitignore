@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 venv/
 schedule_report.html
+ns_key.pem
+ns_cert.pem
+*.pem
+netsuite_snapshot.json
