@@ -1,75 +1,94 @@
-# Integrated Production Scheduler — Proof of Concept
+# `aps` — Integrated Production Scheduler
 
-A small, runnable demonstration of the genuinely novel part of the system described in
-[`../docs/production-scheduler-research.md`](../docs/production-scheduler-research.md): a
-**finite-capacity production schedule that chooses how to source each raw material** (which
-supplier / freight mode), trading off **material + freight/expedite cost against tardiness
-penalties**, using Google OR-Tools CP-SAT.
+A working, tested in-house production scheduler for discrete (BOM-driven) manufacturing — built for
+SlipBot-style build-to-order. It plans materials, schedules builds on finite capacity, **chooses how
+to source each part** (supplier × freight, expediting only when it pays), answers rush-order quotes,
+and recommends safety stock. Backed by the research in
+[`../docs/production-scheduler-research.md`](../docs/production-scheduler-research.md).
 
-It implements the model from **§7.5 (objective) + §7.7 (CP-SAT alternative-interval pattern)** and
-shows the three behaviors you asked about:
+## What it does
 
-1. **Standard sourcing** — cheapest supplier/ocean freight when the due date is comfortable.
-2. **Feasible-but-expensive** — when a customer wants it faster, the solver *chooses* to pay an air
-   freight premium or a more expensive alternate supplier because that's cheaper than the tardiness
-   penalty.
-3. **Genuinely infeasible** — single backlogged supplier, no faster mode, due date physically
-   unreachable → the model reports it can't hit the date and quotes the earliest it *can*.
+| Layer | Module | Purpose |
+|---|---|---|
+| **MRP** | `aps/mrp.py` | Multi-level BOM explosion + gross-to-net (on-hand, scheduled receipts, safety stock) + lead-time offsetting. Flags shortages. |
+| **Scheduling** | `aps/scheduler.py` | OR-Tools CP-SAT: finite-capacity build stations, BOM precedence, **sourcing-mode choice**, lexicographic **on-time-first** then cheapest objective. |
+| **Build times** | `aps/model.py` | Fixed per-product build duration (the production lead time once materials are on hand). |
+| **Promising** | `aps/promising.py` | Rush-order quoting: achievable date, expedite premium, displaced orders, accept/decline (profit test). |
+| **Safety stock** | `aps/safety_stock.py` | SS / reorder-point / EOQ from demand + lead-time variability. |
+| **Ingestion** | `aps/connectors/` | NetSuite (SuiteQL) + Google Drive → `PlanningInput`, transport-agnostic. |
+| **Orchestrator** | `run.py` | One CLI that runs the whole pipeline and prints a report. |
 
-> This is a teaching/scoping PoC, not production code. Time is modeled in **days** as integers.
-> Data is hard-coded in `data.py`. There is no NetSuite connection here — see §9 of the research
-> doc for the extraction layer that would feed `data.py`.
-
-## What it models
-
-- **Jobs** (customer orders): each has a quantity, a due date, and a per-day tardiness penalty
-  (`weight`), plus a revenue figure so you can see profit.
-- **Operations**: each job routes through one or more **work centers**; operations are sequential
-  (precedence) and a work center does one operation at a time (`NoOverlap` = finite capacity).
-- **Materials**: each job consumes raw materials. Each material has several **sourcing modes**
-  (supplier × freight), each with a `cost_per_unit`, a `lead_time_days`, and a capacity limit.
-- **The coupling**: a job's first operation cannot start until its materials have arrived. The
-  chosen sourcing mode's lead time sets that material-available date — so picking air freight lets
-  production start sooner, at higher cost.
-
-## Objective (matches §7.5 of the research doc)
-
-```
-minimize   Σ material cost (qty × chosen mode cost_per_unit)
-         + Σ freight/expedite premium (baked into mode cost)
-         + Σ weightⱼ × tardinessⱼ
-```
-
-Exactly one sourcing mode is chosen per (job, material) via `add_exactly_one`. The material-available
-date is wired to the job's start. The solver pays a premium only when it beats the tardiness penalty.
-
-## Run it
+## Quick start
 
 ```bash
 cd scheduler-poc
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python scheduler.py
+pip install -r requirements.txt        # ortools
+
+python run.py                          # full report on the seed (SlipBot) dataset
+python run.py --quote SLIPBOT-V3:2@45  # quote 2 SlipBots wanted by day 45
+python run.py --service-level 0.97     # safety stock at 97% service level
+python run.py --snapshot ns.json       # plan against a live NetSuite snapshot
+
+# focused demos
+python run_mrp.py        # MRP purchasing/build plan
+python run_schedule.py   # finite-capacity schedule + sourcing
+python run_quote.py      # three rush-order quotes
+
+# tests (no network, no pytest required)
+for t in tests/test_*.py; do python "$t"; done
 ```
 
-You'll see three scenarios printed back-to-back (comfortable due date, rush date, impossible date)
-with the chosen sourcing mode per material, the schedule, the cost breakdown, and the
-promise-date verdict.
+## The core idea: lead time is a decision variable
 
-## Files
+Each purchased part has a **menu of sourcing modes** (supplier × freight), each with its own landed
+cost and lead time:
 
-- `data.py` — the sample problem (work centers, jobs, operations, materials, sourcing modes,
-  scenarios). Edit this to model your own shop.
-- `scheduler.py` — the CP-SAT model + solver + a readable report. This is the load-bearing file.
-- `requirements.txt` — just `ortools`.
+```
+ALLOY-FRAME:  FrameCo-ocean  $900  84d
+              FrameCo-air   $1300  21d   <- expedite
+              FrameAlt-prem $1700  35d   <- alternate supplier
+```
 
-## Where this slots into the full system
+The scheduler picks exactly one mode per part (CP-SAT `add_exactly_one` over optional intervals) and
+pays a premium **only when it's needed to hit a date** — because the objective is on-time first,
+then cheapest. So:
 
-This PoC is step 3–4 of the build sequence in §5 of the research doc. In production you would:
+- relaxed due date → cheapest (ocean),
+- rush date → air/alternate (feasible-but-expensive),
+- impossible date → minimal tardiness + the earliest achievable date is reported.
 
-- Replace `data.py` with a **SuiteQL extract** from NetSuite (§9) → items, BOMs, routings, work
-  centers, inventory, open POs, and **per-vendor lead time + cost** (which you must pull yourself —
-  see §9.3).
-- Add **MRP gross-to-net + multi-level BOM explosion** (§4) upstream to turn finished-good demand
-  into the per-material requirements this model consumes.
-- Wrap the solver in the **sandbox "test plan"** pattern (§8.2) for live rush-order quoting.
+## Connecting live data
+
+The connectors are **transport-agnostic** — they take an injected fetch function, so the same
+mapping code works over the NetSuite REST/SuiteQL API (production, credential-driven) or via the
+NetSuite MCP connector (an agent pulls a snapshot to JSON):
+
+```python
+from aps.connectors.netsuite import NetSuiteIngestor
+
+def query(sql: str) -> list[dict]:
+    ...  # POST to /services/rest/query/v1/suiteql (OAuth2) OR call the NetSuite MCP SuiteQL tool
+
+pin = NetSuiteIngestor(query).build_planning_input()
+```
+
+> The NetSuite record/field internal IDs in `connectors/netsuite.py` come from research and **must be
+> verified** against your account's REST metadata-catalog. Per research §9.3, NetSuite's per-vendor
+> lead-time handling is limited, so we pull **raw per-vendor (cost, lead time)** rows and let our own
+> optimizer choose — and we synthesize air/expedite alternatives for long-lead parts.
+
+## Status & honest limitations
+
+Built and tested across 5 iterations (20 tests passing). Known simplifications, by design:
+
+- **Build time** is a fixed per-product duration, not operation-level routing (matches the chosen
+  data model; finer routings can layer in without changing callers).
+- One build task per (item, order) — quantity scales cost/material, not build count.
+- Procurement is released as-early-as-needed; no holding-cost term yet (so JIT order release isn't
+  rewarded).
+- Work centers must be supplied to enable finite capacity; a NetSuite snapshot without routings
+  schedules builds unconstrained until stations are added.
+- Demand-rate inputs to safety stock are a horizon-average proxy; wire real forecast history for
+  production.
+
+See the research doc's confidence summary for what to verify before relying on any figure.
