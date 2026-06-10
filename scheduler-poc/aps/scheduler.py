@@ -147,6 +147,7 @@ class ScheduleResult:
     sourcing: list[SourcingChoice] = field(default_factory=list)
     builds: list[BuildSlot] = field(default_factory=list)
     feasible: bool = True
+    makespan: int = 0
 
 
 def _build_model(pin: PlanningInput, tasks: dict[str, Task]):
@@ -242,7 +243,22 @@ def _build_model(pin: PlanningInput, tasks: dict[str, Task]):
     return model, start, end, presences, cost_terms, tardiness_terms, tardiness_vars
 
 
-def schedule(pin: PlanningInput, time_limit_s: float = 15.0) -> ScheduleResult:
+@dataclass
+class ObjectiveWeights:
+    """Weights for a single-objective weighted schedule (iteration 8).
+
+    Mind the SCALES: tardiness is in days, cost in dollars (thousands), makespan in days. To make
+    'on-time matters most', set tardiness >> cost (e.g. tardiness=100000, cost=1). makespan is a
+    throughput proxy (shorter span = more builds per period). Leave `objective=None` on schedule()
+    to use the default lexicographic on-time-first behavior instead.
+    """
+    tardiness: int = 100000
+    cost: int = 1
+    makespan: int = 0
+
+
+def schedule(pin: PlanningInput, time_limit_s: float = 15.0,
+             objective: "ObjectiveWeights | None" = None) -> ScheduleResult:
     tasks = expand_demand(pin)
     model, start, end, presences, cost_terms, tardiness_terms, tardiness_vars = _build_model(pin, tasks)
 
@@ -250,11 +266,29 @@ def schedule(pin: PlanningInput, time_limit_s: float = 15.0) -> ScheduleResult:
     model.add(total_tardiness == (sum(tardiness_terms) if tardiness_terms else 0))
     total_cost = model.new_int_var(0, 10**9, "total_cost")
     model.add(total_cost == (sum(cost_terms) if cost_terms else 0))
+    makespan = model.new_int_var(0, pin.horizon_days, "makespan")
+    if end:
+        model.add_max_equality(makespan, list(end.values()))
+    else:
+        model.add(makespan == 0)
 
+    # ---- Weighted single-objective mode (configurable tradeoff) ----
+    if objective is not None:
+        model.minimize(objective.tardiness * total_tardiness
+                       + objective.cost * total_cost
+                       + objective.makespan * makespan)
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = time_limit_s
+        st = solver.solve(model)
+        if st not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            return ScheduleResult(status=solver.status_name(st), total_tardiness=-1,
+                                  total_cost=-1, feasible=False)
+        return _extract(pin, tasks, solver, start, end, presences, tardiness_vars,
+                        solver.status_name(st), makespan)
+
+    # ---- Default: lexicographic on-time-first (minimize tardiness, then cost) ----
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = time_limit_s / 2
-
-    # ---- Phase A: minimize tardiness (on-time first) ----
     model.minimize(total_tardiness)
     st = solver.solve(model)
     if st not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
@@ -262,7 +296,6 @@ def schedule(pin: PlanningInput, time_limit_s: float = 15.0) -> ScheduleResult:
                               total_cost=-1, feasible=False)
     best_tardiness = int(solver.value(total_tardiness))
 
-    # ---- Phase B: hold tardiness at best, minimize cost ----
     model.add(total_tardiness <= best_tardiness)
     model.minimize(total_cost)
     solver2 = cp_model.CpSolver()
@@ -272,11 +305,20 @@ def schedule(pin: PlanningInput, time_limit_s: float = 15.0) -> ScheduleResult:
     status_name = solver2.status_name(st2) if st2 in (cp_model.OPTIMAL, cp_model.FEASIBLE) \
         else solver.status_name(st)
 
-    return _extract(pin, tasks, sol, start, end, presences, tardiness_vars, status_name)
+    return _extract(pin, tasks, sol, start, end, presences, tardiness_vars, status_name, makespan)
 
 
-def _extract(pin, tasks, sol, start, end, presences, tardiness_vars, status_name) -> ScheduleResult:
+def compare_objectives(pin: PlanningInput, configs: "dict[str, ObjectiveWeights | None]",
+                       time_limit_s: float = 8.0) -> "dict[str, ScheduleResult]":
+    """Run the schedule under several objective configurations for a what-if tradeoff comparison."""
+    return {name: schedule(pin, time_limit_s, obj) for name, obj in configs.items()}
+
+
+def _extract(pin, tasks, sol, start, end, presences, tardiness_vars, status_name,
+             makespan=None) -> ScheduleResult:
     res = ScheduleResult(status=status_name, total_tardiness=0, total_cost=0)
+    if makespan is not None:
+        res.makespan = int(sol.value(makespan))
     for uid, t in tasks.items():
         if t.kind is MakeBuy.BUY:
             for i, m in enumerate(t.modes):
