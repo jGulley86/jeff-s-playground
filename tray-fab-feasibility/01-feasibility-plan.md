@@ -1,10 +1,13 @@
-# In-House Tray Fabrication Feasibility — Standing Plan (Loop 25 state)
+# In-House Tray Fabrication Feasibility — Standing Plan (Loop 50 state)
 
 Slip Robotics steel tray fabrication, evaluated 2026-06-10. Volumes: **20 Heavy Trays
-(106901-R02) + 10 Wood/Light Trays (107455-R01) per month**. Scope: fabrication only —
-receiving, cutting, forming, welding, surface prep/coating, fab QA. Assembly excluded.
-All sources in `04-data-basis.md`; derivations in `02-loop-log.md`; open items in
-`03-registers.md`.
+(106901-R02) + 10 Wood/Light Trays (107455-R01) per month** — heavy demand is evidenced
+at 21–22/mo by work-order history; wood is a ramp target (3 work orders to date).
+Scope: fabrication only — receiving, cutting, forming, welding, surface prep/coating,
+fab QA. Assembly excluded. Sources in `04-data-basis.md`; derivations in
+`02-loop-log.md` and `05-loop-log-26-50.md`; financials in `06-financial-model.md`;
+open items in `03-registers.md`. Where this file and the loop logs disagree, the
+Loop-49 restated numbers (carried here) govern.
 
 **Architecture decided (hybrid):** buy laser-cut tube kits and formed-sheet kits; weld
 the heavy weldment (106900) and wood-tray leg weldments (107508) in-house; outsource
@@ -70,6 +73,12 @@ Surge = overtime, then contract welders (1.45×). Turnover assumption 20%/yr; st
 requisition + quarterly coupon-test pipeline. Second shift (+3 welders, +0.5 lead) only
 at the 2× volume trigger.
 
+Skills ladder (Loop 38): Fab 1 ($24–26, legs/tack) → Fab 2 ($26–29, owns a heavy cell) →
+Fab 3 ($29–31, FA welder/deputy lead); step-ups by documented quals, not tenure; every
+welder reaches Fab 2 breadth on both cell types within 9 months; lead sponsored to CWI-prep
+(internal CAWI by ~M12 cuts contract-CWI spend). Wage band validated against Atlanta
+market data (avg $22.76–24.64/hr — plan band sits at the 60th–85th percentile).
+
 ## 4. Facility requirements
 
 Location: within **1275 Oakbrook Drive (43,790 SF; $7.50 base + $2.50 NNN)** — 9,000 SF
@@ -86,6 +95,12 @@ nominal / 7,500 SF minimum, fallback to nearby flex space if landlord declines h
 | WIP buffer (post-weld, pre/post-powder) | 1,200 |
 | Aisles/forklift circulation | 2,400 |
 | **Total** | **9,000** |
+
+Layout (Loop 36): U-flow off one dock — dock → receiving/cantilever racks → kitting →
+gantry run 1 (weld cells A/B) → gantry run 2 (inspection/straightening) → powder staging
+back at the dock. Longest crane-assisted move ≈ 80 ft; weldments travel only by gantry +
+powered cart (never forklift); legs run a parallel bench lane; 12-ft aisles sized for
+16-ft cart turns. Kits staged at the cell the prior afternoon so welders never leave the arc.
 
 Requirements: clear height ≥ 18 ft over weld cells (H-3); 480V 3φ, ~115 kVA demand →
 250A feeder (H-8: confirm building spare capacity); compressed air 100 CFM (25 HP screw +
@@ -108,6 +123,14 @@ review, NFPA 51B hot-work program. No coating operations on site → no air perm
   (foot mounts, lifting interfaces, deck tabs) gauged go/no-go in production thereafter.
 - **Final:** coating thickness 2–3 mil check, serialized traveler (merged with powder packing list).
 - **Calibration:** gauge/cal program ≈ $6K/yr; fixture re-cert annually or after any crash.
+- **Traceability (Loop 40):** every serial records welder ID, WPS rev, wire heat/lot, kit
+  batch (→ steel heat via MTR), powder lot, FA reference — all fields on the existing
+  traveler, ≈ zero cost. Recall scope by serial becomes a query, not an investigation.
+- **NDT:** UT spot-check of lifting-interface welds on FA units and quarterly audit units
+  (contract NDT, ~$1.5K/yr); PE/engineering memo on weld design margins requested (H-14).
+- **Field-incident runbook (Loop 46):** serial → traceability query → sibling-serial UT
+  containment → pre-written field repair procedure → CWI-led 8D; tabletop drill at M8.
+  The runbook covers vendor-welded trays too — that exposure exists today regardless.
 - H-13: request engineering relax the blanket ±.02 two-place tolerance on non-interface
   weldment dims — the single highest-leverage FA risk reducer.
 
@@ -141,51 +164,66 @@ line); insurance/misc $24K/yr.
 - Subordination: every capex line either feeds the drum or is infrastructure; cutting and
   forming capacity were deliberately **not** purchased (kits) so no non-drum machine exists
   to absorb cash or attention. At 2× volume, exploit (second shift) before elevate (tack jig
-  $30K), before any new fixture.
+  $30K), before any new fixture (>44/mo).
+- **The buy path has a drum too (Loop 28):** TEEMS's demonstrated throughput is ~24–26
+  weldments/month — at parity with current demand. Growth on the buy path requires
+  qualifying a second weldment vendor (8–12 weeks + FA) outside Slip's control; the make
+  path does that qualification once, internally.
+- **Management operating system (Loop 35):** daily 10-minute tier at the drum board; six
+  KPIs — drum schedule attainment ≥95%, weld hr/unit (16.5 → 14.5 by M12), first-pass
+  yield ≥97%, kit-buffer days 4–6, safety/IH events 0, cost/unit vs. model — weekly trend
+  review by the lead, monthly one-pager to Jeff. Two missed drum days in a row
+  auto-authorizes overtime. Growth triggers pre-authorized: >20/mo sustained 8 weeks →
+  hire shift 2 + tack jig (TEEMS callable frame bridges the 8-week hiring window).
 
 ## 9. Financials
 
-**Unit economics, heavy weldment (steady state / year 1):**
+Full model in `06-financial-model.md` (Loop-49 restated, cash basis). Headlines:
 
-| | Make (hybrid) | Buy |
+**Unit economics, heavy weldment (for unit decisions and gate G-2):**
+
+| | Make (hybrid) | Buy (current) |
 |---|---|---|
-| Tube kit (1,088 lb gross, batch-nested) | $1,360 | — |
-| Plate/formed kit (208 lb gross) | $447 | — |
+| Tube kit (1,088 lb gross @ $0.90/lb, batch-nested) | $1,560 | — |
+| Plate/formed kit (208 lb gross @ $0.74/lb) | $475 | — |
 | Powder coat (incl. freight, 5/load) | $425 | — |
 | Consumables | $130 | — |
 | Direct weld labor 16.5 hr @ $35.10 | $579 | — |
 | Ops-tech share 2.6 hr @ $33.75 | $88 | — |
 | Cost of quality (yr-1 $190 → steady $95) | $95–190 | — |
-| **Variable cost** | **$3,124–3,219** | **$5,221** |
-| Contribution per unit | $2,070 (yr 1) → $2,170 | — |
+| **Variable cost** | **$3,352–3,447** | **$5,577.84** (PO10309) |
+| **Contribution per unit** | **$2,226 steady / $2,131 yr-1** | — |
 
-Fixed pool: lead $107K + facility/utilities/insurance $150K + maintenance/cal $20K +
-amortization $64K = **$341K/yr** → breakeven ≈ **13 heavy-equiv/month**.
+**Annual cash P&L at plan volume (full payroll, not allocated hours):** avoided buy
+$1,427K − cash costs $1,272K = **net ≈ +$155K/yr steady (+$120K yr-1)**. Cash breakeven
+volume ≈ **15 heavy/mo**. Heavy legs stay purchased (vendor $79.71 beats internal — Loop 17).
 
-**Annual at plan volume (240 heavy + 120 wood):** make-side total ≈ $1.72M vs. buy baseline
-$1.88M → **net ≈ +$165K/yr** (wood legs ≈ +$18K of that; in-housing heavy legs was evaluated
-and rejected — vendor at $79.71 beats internal cost).
+**Scenarios (cash basis):** 12/mo ≈ −$10K (hibernation path); 16/mo ≈ +$60K; **20/mo
+≈ +$155K**; 30/mo ≈ +$270K; 40/mo two-shift ≈ +$525K; steel +25% widens the make
+advantage ~$550/unit (kits indexed without margin-on-material; vendor passes both).
 
-**Sensitivity:**
-
-| Scenario | Net annual benefit |
-|---|---|
-| −40% (12 heavy/mo) | −$43K (shrinkable to ≈ −$10K; hibernation path defined) |
-| −30% (14/mo) | +$23K |
-| Plan (20/mo) | +$165K |
-| +30% (26/mo) | +$292K |
-| 2× (40/mo, 2nd shift) | +$580K |
-| Steel +25% | Make advantage widens ~$100–190/unit (vendor passes through margin-on-material; kit POs index-priced without it) |
-
-**Capex $504K**; cash low point ≈ −$610K at month 6; simple payback 3.1 yr at flat 20/mo,
-<2 yr on the growth path. Optional equipment lease flattens the cash trough to ≈ −$280K
-for +$11K/yr (H-10).
+**Investment:** capex $504K; cash trough ≈ **−$700K (M6–M7)**, partially offset by a
++$100K working-capital release at M8 (buy pipeline ~$140K shrinks to ~$40K in-house loop).
+5-yr NPV @10%: **≈ −$30K flat / +$310K growth path** (IRR ≈ 9% / 22%). Read plainly:
+flat-forever does not clear a venture hurdle; the growth path does, comfortably — which is
+exactly what gate G-1 exists to establish. Regret if gates are used: stop at G-2 ≈ −$50K;
+stop at G-3 ≈ −$400K; vs. ≈ −$700K with no gates. Optional equipment lease flattens the
+trough to ≈ −$380K for +$11K/yr (H-10).
 
 ## 10. Implementation timeline (decision = M0; SOP target M7)
 
+**Decision gates (Loop 34/49):** **G-1** (M0, Jeff): 24-month committed forecast
+≥ 18 heavy-equiv/mo + acceptable insurance read (H-16) + leadership attention available
+(~50% of an ops leader M0–M2, ~20% M3–M6, ~5% after M9). **G-2** (~M1, Jeff + lead): real
+kit/powder quotes give contribution ≥ $1,800/unit (kit-set ≤ ~$2,460); otherwise take the
+renegotiation branch (target TEEMS at $4,800–5,000 using the should-cost). **G-3** (~M5,
+engineering + CWI): 3 FA units pass quality AND measured weld-dept hours ≤ 19/unit.
+Critical path: fixture design (6 wk) → build (12 wk) → cert (1 wk) → FA (4 wk) → ramp
+(6 wk) = 29 weeks; platen fallback recovers 4 weeks if the fixture build slips.
+
 | Month | Milestones |
 |---|---|
-| M0 | Decision + volume gate check (forecast ≥18/mo); landlord/fire-marshal conversations start week 1; kit + powder RFQs out (H-5, H-7) |
+| M0 | G-1; landlord/fire-marshal conversations start week 1; kit + powder RFQs out (H-5, H-7, includes deck second-sourcing per Loop 44); TEEMS 90-day price lock, then the sequenced conversation (Loop 39); 10-unit bridge stock build starts |
 | M1–M2 | Fixture design (Slip-owned CAD); dual-quote fixture build; fixture steel pre-ordered at 60% design; lease/space confirmed; hire lead (M2) |
 | M2–M4 | Facility prep (feeder, air, fume, racks); gantries installed; welders 1–2 hired (M3), quals + WPS/PQR with CWI; leg cell live (first revenue work: wood legs) |
 | M4–M5 | Fixture delivered + laser-tracker certified; 3 first-article weldments; FARO rental; FA before/after-powder measurement |
@@ -210,6 +248,8 @@ in-house platen fallback worth 0.7/day).
 | R-8 | Demand falls below breakeven (13/mo) | Mitigated: volume gate G-1 (≥18/mo committed 24-mo forecast); hibernation path; ~$200K net capex at risk after resale |
 | R-9 | First-article distortion/quality failure | Mitigated: sequence control, restraint cooling, pre/post-powder FA, CWI disposition, $40K contingency; H-13 tolerance relief |
 | R-10 | Steel price spike | Accepted-favorable: index-priced kits; flag absolute cost rise to product pricing |
+| R-11 | Structural liability shifts in-house; field weld failure | Insurance delta in fixed costs (H-16), serial traceability, UT spot checks, PE design-margin memo (H-14), incident runbook + M8 drill. Note: with traceability, in-house is arguably *lower*-liability than today's vendor configuration (no serial-level weld records from TEEMS) |
+| R-12 | Wood volume never reaches 10/mo (3 work orders to date) | Confined impact (~$20K/yr of leg drum-filler); no capex or gate depends on wood |
 
 ## 12. Make / Buy / Hybrid recommendation
 
@@ -217,11 +257,25 @@ in-house platen fallback worth 0.7/day).
 cut/formed kits, powder outsourced. Stay-buy: decks, heavy legs, wood-tray piece parts,
 hardware, aluminum edge extensions.
 
-Deciding factors: (1) the vendor weldment price ($5,221) carries ≈ $2,100/unit of
-labor+margin that 16.5 hr of in-house welding captures; (2) cutting at 20/mo doesn't pay
-for cutting machines — kits do; (3) powder in-house is the worst permit/capex per dollar
-saved; (4) design churn (R01→R03 in 4 months) and 6–8 week vendor lead times are a growing
-tax that in-house welding removes; (5) economics are volume-driven: gate on a committed
-24-month forecast ≥ 18 heavy-equiv/mo (G-1). If the forecast is flat ≤ 14/mo: do not build —
-instead use this model's should-cost to renegotiate the weldment price (target $4,400–4,600)
-and revisit at the next volume step.
+Deciding factors (Loop-50 state):
+1. The current vendor price ($5,577.84, single-sourced to TEEMS) carries roughly
+   $2,200/unit of capturable labor+margin against 16.5 hr of in-house welding.
+2. Cutting at 20/mo doesn't pay for cutting machines — kits do; powder in-house is the
+   worst permit/capex per dollar saved. Both stay out, which also removes every long-lead
+   machine from the critical path.
+3. The buy path hits a measured capacity wall: TEEMS delivers ~24–26/mo, demand is already
+   21–22/mo and scheduled out 7 weeks. Growth forces a second-vendor qualification either
+   way; in-house does it once, under Slip's control, and cuts lead time from 3–6.5 weeks
+   to ~7–11 days.
+4. Revision churn is a measured tax: the R02→R03 change opened at +12.4% and settled at
+   +6.8% — three revisions in four months. In-house, a rev change is a fixture-block and
+   kit-nest update, not a repricing event.
+5. The economics are honestly growth-conditional: ≈ +$155K/yr at today's volume (NPV ≈
+   breakeven at a 10% hurdle), ≈ +$525K/yr at 2× (NPV strongly positive). The three gates
+   (G-1 volume/insurance, G-2 quotes, G-3 first articles) cap regret at ~$50K, then
+   ~$400K, and each has a pre-written fallback: renegotiate TEEMS to $4,800–5,000 with the
+   should-cost model and revisit at the next volume step.
+
+If the 24-month committed forecast is flat ≤ 15/mo, or leadership attention isn't
+available for M0–M6, take the renegotiation branch — that is a successful outcome of this
+analysis, not a failure of it.

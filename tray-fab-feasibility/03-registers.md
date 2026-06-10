@@ -1,4 +1,9 @@
-# Cumulative Registers (Loop 25 state)
+# Cumulative Registers (Loop 50 state)
+
+> Items I-01..I-67, A-1..A-8, H-1..H-13 are the Loop-25 state (below, unchanged as
+> history). Loops 26–50 additions and supersessions are in the second half of this file —
+> see "Loops 26–50 additions." Where numbers conflict, the Loop-49 restated values govern
+> (`06-financial-model.md`).
 
 ## Issues Register
 
@@ -106,8 +111,91 @@ All 67 issues raised across the 25 loops, with final disposition. Full narrative
 | H-12 | Staffing-agency read on Atlanta welder market depth (incl. 2nd shift) | R-7 |
 | H-13 | Engineering: weldment-specific tolerance note (loosen non-interface dims) | Highest-leverage FA risk reducer |
 
-## Volume gate
+## Volume gate (superseded — see Decision gates below)
 
-**G-1:** commit capital only with a credible 24-month forecast ≥ 18 heavy-equivalent
+**G-1 (v1):** commit capital only with a credible 24-month forecast ≥ 18 heavy-equivalent
 trays/month. Below 14/mo flat: use the should-cost model to renegotiate the purchased
 weldment price (target $4,400–4,600) instead of building.
+
+---
+
+# Loops 26–50 additions
+
+## Issues Register additions (I-68..I-104)
+
+| # | Issue | Disposition |
+|---|---|---|
+| I-68 | Buy baseline stale (R02 price) | Resolved L26: current price $5,577.84 (PO10309) |
+| I-69 | PO history never queried | Resolved L26: data basis §7 |
+| I-70 | Rev-change pricing uncosted | Resolved L26: +12.4% opening, +6.8% settled per rev |
+| I-71 | Volume gate lacked evidence | Resolved L27: WOs at 21–22/mo through 7/27/26 |
+| I-72 | Wood volume taken as given | Resolved L27: 3 WOs ever; ramp target only (R-12) |
+| I-73 | Vendor concentration unnamed | Resolved L28: TEEMS single source (weldments) |
+| I-74 | Vendor capacity unknown | Resolved L28: ~24–26/mo demonstrated max |
+| I-75 | Piece-part vendor map | Resolved L28: Steel Materials, Starflex |
+| I-76 | Tube price assumption wrong | Resolved L29: $0.90/lb market (was $0.72); A-9 |
+| I-77 | Kit cost rebase | Resolved L29: kit-set $2,035 |
+| I-78 | Wages unsourced | Resolved L30: BLS/Indeed/ZipRecruiter validated |
+| I-79 | Wage band adequacy | Resolved L30: 60th–85th percentile positioning |
+| I-80 | Vendor lead time asserted | Resolved L31: measured 3.0–6.5 wk |
+| I-81 | Working capital uncompared | Resolved L31: ~+$100K release at SOP |
+| I-82 | Economics rebase | Resolved L32 (restated again L49) |
+| I-83 | No monthly cash/NPV/IRR | Resolved L33 (restated L49; see 06) |
+| I-84 | Timeline lacked owners/dependencies | Resolved L34: critical path 29 wk; owners set |
+| I-85 | No decision governance | Resolved L34: gates G-1/G-2/G-3 with exit criteria |
+| I-86 | No management operating system | Resolved L35: 6 KPIs, tiered cadence |
+| I-87 | No layout/flow | Resolved L36: U-flow, two gantry runs |
+| I-88 | No PM/spares/crash recovery | Resolved L37: PM program, hot-spare MIG, locator blocks |
+| I-89 | No skills ladder (retention) | Resolved L38: Fab 1/2/3 ladder, CAWI path |
+| I-90 | Kit RFQ content unspecified | Resolved L39: package defined; 70/30 dual award |
+| I-91 | TEEMS negotiation unplanned | Resolved L39: sequenced offer (keep $320K/yr scope) |
+| I-92 | **Liability shift unaddressed** | Resolved L40: insurance (H-16), +$20K/yr fixed (R-11) |
+| I-93 | Traceability undefined | Resolved L40: serial→welder/WPS/heat/lot at ~$0 |
+| I-94 | Weld design margin ownership | Resolved L40: PE memo (H-14) + UT spot checks |
+| I-95 | Kit quotes +25% scenario | Resolved L41: G-2 floor = contribution ≥$1,800/unit |
+| I-96 | Weld hours +30% scenario | Resolved L42: staged OT→4th welder; G-3 measures hours |
+| I-97 | Combined downside | Resolved L43: gates cap regret at ~$50K/$400K |
+| I-98 | TEEMS retaliation | Resolved L44: pre-quoted second source; 10-unit bridge stock (sunset M9) |
+| I-99 | Early upside / capacity | Resolved L45: pre-authorized triggers (shift 2 at >20/mo×8wk) |
+| I-100 | Field weld failure unscripted | Resolved L46: runbook + tabletop drill M8 (applies to vendor trays too) |
+| I-101 | Management attention unpriced | Resolved L47: bounded (50%→20%→5%); renegotiate branch if unavailable |
+| I-102 | Macro swings | Resolved L48: recession ≈ +$8K floor; tariffs widen make advantage |
+| I-103 | Cross-document consistency | Resolved L49 audit |
+| I-104 | **Contribution method overstated annuals** | Resolved L49: restated to cash P&L (+$155K/yr at plan) |
+
+## Assumptions Register additions / supersessions
+
+| # | Assumption | Status |
+|---|---|---|
+| A-3 | Kit ≈ 1.9× material | **Superseded** by A-9 |
+| A-9 | Kits priced at $0.90/lb tube / $0.74/lb plate (Mar 2026 indices) + machine time + margin → $2,035/set | Active; G-2 replaces with quotes |
+| A-4 | Wage band $24–29 welder | Confirmed L30 with market sources; re-dated Jun 2026 |
+| A-6 | Powder $425/weldment incl. freight | Unchanged; H-5 still open |
+| A-10 | Liability insurance delta $15–25K/yr (midpoint carried) | New (L40); H-16 to confirm |
+
+## Human Inputs additions
+
+| # | Input | Why |
+|---|---|---|
+| H-14 | PE/engineering memo on weld design margins (lifting interfaces, leg attachments) + field repair procedure | Liability (R-11), FA dispositions, incident runbook |
+| H-15 | TEEMS contract/MSA review: exclusivity, tooling ownership, notice terms | Transition sequencing (L39/L44) |
+| H-16 | Broker quote: product-liability policy delta for in-house structural welding | $15–25K/yr placeholder in fixed costs |
+
+## Risk register additions
+
+| # | Risk | Mitigation |
+|---|---|---|
+| R-11 | Structural liability shifts in-house; field weld failure | Insurance (H-16), serial traceability, UT spot checks, PE memo (H-14), incident runbook + drill; note: traceability makes in-house arguably lower-liability than today's vendor config |
+| R-12 | Wood volume never reaches 10/mo | Confined impact (~$20K/yr drum filler); no capex depends on wood |
+
+## Decision gates (final, Loop 49–50)
+
+| Gate | When | Criteria | Owner | Max regret if stopped here |
+|---|---|---|---|---|
+| **G-1** | M0 | 24-month committed forecast ≥ 18 heavy-equiv/mo AND insurance read (H-16) acceptable AND leadership attention available (L47) | Jeff | ~$0 |
+| **G-2** | ~M1 | Real kit + powder quotes give unit contribution ≥ $1,800 (kit-set ≤ ~$2,460) | Jeff + fab lead | ≈ −$50K |
+| **G-3** | ~M5 | 3 FA units pass quality AND measured weld-dept hours ≤ 19/unit | Engineering + CWI | ≈ −$400K |
+| Growth triggers | post-SOP | >20/mo sustained 8 wks → shift 2 + tack jig; >44/mo → second fixture | Fab lead → Jeff | n/a |
+
+Fallback branch at any gate: renegotiate TEEMS to $4,800–5,000/weldment using the
+should-cost model; revisit at the next volume step.

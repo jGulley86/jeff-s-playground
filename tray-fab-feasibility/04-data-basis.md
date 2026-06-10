@@ -107,3 +107,55 @@ $349.92 + tailhooks $233.28 + plates $291.60 + bent sheets $174.96 + beams est. 
 
 Annual buy baseline at plan volume: 240 × $6,543 + 120 × $2,586 ≈ **$1.88M/yr** of
 addressable fabricated-steel spend.
+
+> Superseded by §7 (Loops 26–32): current weldment price is $5,577.84 → heavy fab-scope
+> ≈ $6,899/tray and the baseline ≈ **$1.97M/yr**.
+
+---
+
+# Sections 7–10 added by Loops 26–31 (evidence phase)
+
+## 7. Actual purchase-order history (NetSuite, queried 2026-06-10)
+
+| PO | Date | Vendor | Item | Qty | Unit price |
+|---|---|---|---|---|---|
+| PO10108 | 3/13/2026 | Steel Materials, Inc. | 106911-R01 heavy leg | 68 | $79.71 |
+| PO10118 | 3/16/2026 | TEEMS Fabrication | 106900-R02 weldment | 28 | $5,221.32 |
+| PO10120 | 3/16/2026 | Starflex Fabrication | 107508-R02 wood leg | 18 | $122.71 |
+| PO10191 | 4/6/2026 | Steel Materials, Inc. | 106911-R01 | 48 | $79.71 |
+| PO10264 | 5/4/2026 | Steel Materials, Inc. | 106911-R01 | 50 | $79.71 |
+| PO10280 | 5/11/2026 | TEEMS Fabrication | 106900-R03 weldment | 9 | **$5,868.33** |
+| PO10309 | 5/19/2026 | TEEMS Fabrication | 106900-R03 weldment | 33 | **$5,577.84** |
+
+Findings: heavy weldments are **single-sourced to TEEMS**; the R02→R03 revision repriced
+at **+12.4%** initially, settling at **+6.8%** ($5,577.84 = current price of record);
+weldment buy rate Mar–May ≈ 70 units / 10 weeks ≈ 28/mo ordered.
+
+## 8. Receipt cadence and lead time (PO10118, 28 units)
+
+Receipts: 4/6 (5), 4/10 (5), 4/17 (6), 4/24 (6), 4/30 (6) → PO-to-first-delivery
+**3.0 weeks**, PO-to-last **6.5 weeks**; TEEMS demonstrated throughput **≈ 5–6
+weldments/week (~24–26/mo)** — near parity with current demand, i.e., the buy path has
+little headroom for growth without qualifying a second vendor.
+
+## 9. Demand evidence (work orders, Mar–Jul 2026)
+
+Heavy tray (106901) work orders run a steady **5/week (≈21–22/month)**, released and
+scheduled through **7/27/2026**, with surge weeks of 9–10 (w/o 4/27, 6/29) and a 14-unit
+customer-site batch (Denton, TX, 5/20). Weldment consumption mixes R01/R02/R03 stock.
+Wood tray (107455): **3 work orders total (3/9/2026)**; wood beams never purchased —
+the 10/mo wood volume is a ramp target, not a run rate.
+
+## 10. External market benchmarks (June 2026 searches)
+
+- **Atlanta welder wages:** average $22.76–24.64/hr (ZipRecruiter Feb 2026; Indeed);
+  Georgia median ≈ $22.08/hr (BLS OEWS 51-4121, 2024). Plan band $24–29 ≈ 60th–85th
+  percentile — validated. Sources: [BLS OEWS 51-4121](https://www.bls.gov/oes/2023/may/oes514121.htm),
+  [Indeed Atlanta welder salaries](https://www.indeed.com/career/welder/salaries/Atlanta--GA),
+  [ZipRecruiter Atlanta welder](https://www.ziprecruiter.com/Salaries/Welder-Salary-in-Atlanta,GA).
+- **A500 Gr B rectangular tube, service-center pricing (Mar 2026):** 2×4×⅛ $0.85–0.92/lb;
+  2×6×⅛ $0.93–1.00/lb → model uses **$0.90/lb** (supersedes the $0.72/lb assumption;
+  A36 sheet/plate rebased to $0.74/lb). Sources:
+  [Material Price Book 2×6×⅛](https://www.materialpricebook.com/prices/steel/a500-gr-b/rectangular-tube/2x6x0.125),
+  [Material Price Book 2×4×⅛](https://www.materialpricebook.com/prices/steel/a500-gr-b/rectangular-tube/2x4x0.125),
+  [Totten Tubes A500](https://www.tottentubes.com/structural-a500-rectangular-tubing).

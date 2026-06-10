@@ -1,63 +1,86 @@
-# Executive Summary — In-House Tray Fabrication (Loop 25 final)
+# Executive Summary — In-House Tray Fabrication (Loop 50 final)
 
-**Recommendation: HYBRID — proceed, gated on volume.** Weld the Heavy Tray weldment
+**Recommendation: HYBRID — proceed through three gates.** Weld the Heavy Tray weldment
 (106900) and Wood Tray legs in-house from purchased laser-cut tube and formed-sheet kits;
 outsource powder coat; keep buying steel decks, heavy legs, wood-tray piece parts, and
-hardware. Do not buy cutting, forming, or coating equipment at 20+10 trays/month.
+hardware. No cutting, forming, or coating equipment at current volume.
 
-## The numbers
+**The decision is the gates, not a forecast.** Three sequential commitments, each with
+pre-written exit criteria and a capped downside:
+
+| Gate | When | Proceed only if | Capital at risk if stopped |
+|---|---|---|---|
+| **G-1** | Now | 24-month committed forecast ≥ 18 heavy/mo; insurance read (H-16) acceptable; leadership attention available M0–M6 | ~$0 |
+| **G-2** | ~M1 | Real kit + powder quotes give contribution ≥ $1,800/unit | ≈ $50K |
+| **G-3** | ~M5 | 3 first articles pass quality AND measured hours ≤ 19/unit | ≈ $400K (net of resale) |
+
+Fallback at any gate: renegotiate TEEMS to $4,800–5,000/weldment using this should-cost
+model — a successful outcome, not a failure.
+
+## What the evidence shows (NetSuite, drawings, market data — not assumptions)
+
+- **Current buy price is $5,577.84** (PO10309, 5/19/26), single-sourced to TEEMS
+  Fabrication. The R02→R03 revision opened at +12.4% and settled at +6.8% — with three
+  revisions in four months, rev churn is a measured recurring tax.
+- **Demand is real:** heavy-tray work orders run 21–22/month, scheduled through late July,
+  with surge weeks of 10 and a 14-tray single-site batch (Denton). Wood tray has 3 work
+  orders ever — the plan does not depend on it.
+- **The buy path has a ceiling:** TEEMS's demonstrated throughput is ~24–26/month —
+  parity with demand today. Growth forces a second-source qualification either way.
+- **Lead time:** measured 3.0–6.5 weeks PO-to-receipt today vs. ~7–11 days in-house.
+
+## The numbers (cash basis, Loop-49 audited)
 
 | Metric | Value |
 |---|---|
-| Buy baseline (addressable fab spend) | $1.88M/yr (heavy $6,543/tray; weldment alone $5,221.32 — actual NetSuite PO price) |
-| Make variable cost, heavy weldment | $3,124–3,219/unit (kits $1,807 + powder $425 + labor $667 + consumables/quality) |
-| Contribution | ≈ $2,100/heavy weldment |
-| Net benefit at plan volume (20+10/mo) | ≈ +$165K/yr |
-| At 2× volume (second shift, same fixture) | ≈ +$580K/yr |
-| Breakeven | ≈ 13 heavy-equivalent/month |
-| Capex | $504K (fixture $85K is the heart; no machine >14-wk lead) |
-| Payback | 3.1 yr flat; <2 yr on growth path; cash trough −$610K (M6) |
-| Team | 5 FTE: 3 welders + working lead + ops tech (~$396K/yr loaded) |
-| Space | 9,000 SF within 1275 Oakbrook (18-ft clear, 250A/480V, gantries — no building crane) |
-| Timeline | SOP month 7 from decision; vendor overlap through month 9 |
+| Make variable cost / weldment | $3,352 (kits $2,035 + powder $425 + labor $667 + consumables/CoQ) |
+| Contribution / weldment | **$2,226** |
+| Net cash savings at 20/mo | **≈ +$155K/yr** (yr-1 ≈ +$120K) |
+| At 30/mo / 40/mo (2 shifts) | ≈ +$270K / +$525K per yr |
+| Cash breakeven volume | ≈ 15 heavy/mo |
+| Capex / cash trough | $504K / ≈ −$700K at M6–M7 (lease option: −$380K) |
+| 5-yr NPV @10% | ≈ $0 flat · **+$310K growth path** (IRR ≈ 9% / 22%) |
+| Team / space / SOP | 5 FTE · 9,000 SF at 1275 Oakbrook · month 7 |
 
-## Deciding factors
-
-1. ~$2,100/unit of vendor labor+margin is capturable with 16.5 hr of welding — the only
-   step where Slip's labor beats the vendor's price.
-2. Cutting doesn't pay at this volume; cut kits are a commodity. Coating in-house is the
-   worst permit/capex per dollar saved. Both stay out.
-3. Lead time falls from ~6–8 weeks to days, and design churn (R01→R03 in 4 months) stops
-   costing a requote cycle per revision.
-4. Economics hinge on volume: gate on a committed 24-month forecast ≥ 18 heavy-equiv/mo
-   (H-11). If flat ≤ 14/mo: don't build — use this should-cost to renegotiate to
-   $4,400–4,600/weldment.
+Stated plainly: **at flat current volume this is roughly NPV-neutral — the project is
+justified by the growth path, the vendor capacity wall, the rev-churn tax, and the
+lead-time position.** That is why G-1 demands a committed forecast rather than treating
+today's 22/month as sufficient.
 
 ## Top 5 risks & mitigations
 
-1. **Demand below breakeven (R-8)** — volume gate; modular cost structure shrinks to
-   ≈ −$10K/yr worst case; ~$200K net capex at risk after resale; vendor return path held open.
-2. **Ramp/first-article failure (R-5/R-9)** — incumbent vendor at full rate through M6,
-   50% M7, callable thereafter; 3-unit FA with pre/post-powder measurement; $40K contingency.
-3. **Welder hiring/turnover (R-7)** — hire-for-fitup + qualify internally; wage band to
-   $31; contract-welder bridge priced; standing pipeline.
-4. **Site/hot-work approval (R-3)** — landlord + fire marshal engaged week 1; flex-space
-   fallback adds only ~$20K/yr.
-5. **Powder vendor for 16-ft parts (R-4)** — dual-source at launch; quotes are open item H-5.
+1. **Structural liability moves in-house (R-11)** — broker review before G-1 ($15–25K/yr
+   budgeted), serial-level traceability (welder/WPS/heat/lot — near zero cost), UT spot
+   checks, PE design-margin memo, field-incident runbook (which today's vendor-welded
+   fleet needs anyway).
+2. **Kit quotes come back high** — G-2 floor ($1,800 contribution) catches it at ~$50K
+   exposure; fallback is renegotiation armed with the model.
+3. **Weld hours run over** — G-3 measures actual hours on first articles before the vendor
+   winds down; staged response: overtime → 4th welder; survives +30% hours.
+4. **Ramp or first-article failure** — TEEMS at full rate through M6, callable frame
+   agreement after; 10-unit bridge stock during transition; platen fallback if the fixture
+   slips.
+5. **TEEMS reacts badly** — sequenced negotiation: they keep ~$320K/yr of deck/edge-guard
+   work plus formed-kit first right; decks pre-quoted to kit processors as the hedge.
 
 ## Next 10 actions
 
-1. Jeff: confirm the 24-month tray forecast against the volume gate (H-11) — the decision hinge.
-2. Open landlord + Gwinnett fire-marshal conversation on welding at Oakbrook (H-4), week 1.
-3. RFQ cut kits (tube + formed sheet) to two Atlanta processors with the 106900-R03 package (H-7).
-4. RFQ powder coat, two vendors, 16-ft/1,179-lb parts, RAL 9003 (H-5).
-5. Engineering: confirm weld code intent (H-2), review note-14 all-around welds (H-6),
-   issue weldment tolerance note (H-13).
-6. Verify Oakbrook bay: clear height, spare 480V capacity, slab (H-3/H-8/H-9).
-7. Start fixture design in-house; dual-quote the build; pre-order fixture steel at 60% design.
-8. Post the fab-lead role (hire at M2); engage a contract CWI for WPS/PQR.
-9. Negotiate the vendor frame agreement (overlap schedule + callable capacity, tooling held).
-10. Decide purchase vs lease for the $504K capex (H-10).
+1. Jeff: G-1 — commit or decline the 24-month volume view (H-11); everything sequences
+   from this.
+2. Insurance broker: product-liability delta for in-house structural welding (H-16).
+3. Landlord + Gwinnett fire marshal: hot-work occupancy at Oakbrook (H-4), week 1.
+4. RFQ cut kits + deck second-sourcing to two Atlanta processors (H-7); RFQ powder, two
+   vendors, 16-ft parts (H-5) → feeds G-2.
+5. Lock TEEMS R03 pricing on a 90-day blanket *before* any announcement, then hold the
+   sequenced conversation (keep-scope offer + frame agreement).
+6. Engineering: weld code confirmation (H-2), note-14 weld review (H-6), tolerance note
+   (H-13), design-margin memo (H-14).
+7. Verify Oakbrook bay: clear height, 480V spare capacity, slab (H-3/H-8/H-9).
+8. Start fixture design in-house; dual-quote the build; pre-order steel at 60% design.
+9. Post the fab-lead role; engage the contract CWI.
+10. Decide purchase vs. lease for capex (H-10) once G-2 passes.
 
-Full detail: `01-feasibility-plan.md` (12 sections) · `02-loop-log.md` (25 loops) ·
-`03-registers.md` (issues/assumptions/human inputs) · `04-data-basis.md` (source data).
+Full detail: `01-feasibility-plan.md` (12 sections) · `02-loop-log.md` +
+`05-loop-log-26-50.md` (50 loops) · `03-registers.md` (104 issues, assumptions, human
+inputs, gates) · `04-data-basis.md` (sources incl. PO/WO history) ·
+`06-financial-model.md` (monthly cash, NPV/IRR, regret).
