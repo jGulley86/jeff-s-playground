@@ -40,8 +40,9 @@ class Task:
     qty: int
     kind: MakeBuy
     children: list[str] = field(default_factory=list)   # uids of prerequisite tasks
-    station: str | None = None                          # MAKE only
-    build_days: int = 0                                 # MAKE only
+    station: str | None = None                          # MAKE only (no-routing fallback)
+    build_days: int = 0                                 # MAKE only (no-routing fallback)
+    routing: list = field(default_factory=list)         # MAKE only: list[Operation] (iter 6)
     modes: list[SourcingMode] = field(default_factory=list)  # BUY only
     # demand linkage (finished-good tasks only):
     due_day: int | None = None
@@ -80,7 +81,8 @@ def expand_demand(pin: PlanningInput) -> dict[str, Task]:
 
         if item.make_buy is MakeBuy.MAKE:
             task = Task(uid=uid, sku=sku, qty=net, kind=MakeBuy.MAKE,
-                        station=item.build_station, build_days=item.build_days)
+                        station=item.build_station, build_days=item.build_days,
+                        routing=list(item.routing))
             tasks[uid] = task
             for line in item.bom:
                 child_uid = explode(order_id, line.component, int(ceil(net * line.qty_per)))
@@ -151,12 +153,14 @@ def _build_model(pin: PlanningInput, tasks: dict[str, Task]):
     model = cp_model.CpModel()
     H = pin.horizon_days
 
+    from collections import defaultdict
+
     start = {}      # uid -> start var
     end = {}        # uid -> end var
     presences = {}  # uid -> [presence literals] for BUY tasks
     cost_terms = []
-    station_intervals: dict[str, list] = {wc: [] for wc in pin.work_centers}
-    station_demands: dict[str, list[int]] = {wc: [] for wc in pin.work_centers}
+    station_intervals: dict[str, list] = defaultdict(list)
+    station_demands: dict[str, list[int]] = defaultdict(list)
 
     # Pass 1: create start/end vars for every task (so precedence can reference any child).
     for uid in tasks:
@@ -183,20 +187,43 @@ def _build_model(pin: PlanningInput, tasks: dict[str, Task]):
             presences[uid] = lits
             model.add(e == s + sum(lead_terms))
         else:
-            # MAKE: fixed-duration build on a finite-capacity station.
-            iv = model.new_interval_var(s, t.build_days, e, f"iv_{uid}")
-            if t.station in station_intervals:
-                station_intervals[t.station].append(iv)
-                station_demands[t.station].append(1)
-            # Precedence: can't start until every child task is complete.
+            # MAKE. With a routing, schedule each operation as its own interval on its work center,
+            # sequenced in order; otherwise fall back to a single fixed-duration build interval.
+            if t.routing:
+                op_start_prev = None
+                first_op_start = None
+                last_op_end = None
+                for k, op in enumerate(t.routing):
+                    os_ = model.new_int_var(0, H, f"os_{uid}_{k}")
+                    oe_ = model.new_int_var(0, H, f"oe_{uid}_{k}")
+                    dur = op.duration(t.qty)
+                    iv = model.new_interval_var(os_, dur, oe_, f"iv_{uid}_{k}")
+                    station_intervals[op.work_center].append(iv)
+                    station_demands[op.work_center].append(1)
+                    if op_start_prev is not None:
+                        model.add(os_ >= op_start_prev)  # operations run in routing order
+                    op_start_prev = oe_
+                    if first_op_start is None:
+                        first_op_start = os_
+                    last_op_end = oe_
+                model.add(s == first_op_start)
+                model.add(e == last_op_end)
+            else:
+                iv = model.new_interval_var(s, t.build_days, e, f"iv_{uid}")
+                if t.station:
+                    station_intervals[t.station].append(iv)
+                    station_demands[t.station].append(1)
+            # Precedence: build can't start until every child task is complete.
             for c in t.children:
                 model.add(s >= end[c])
 
-    # Finite capacity per build station.
-    for wc_name, wc in pin.work_centers.items():
-        ivs = station_intervals[wc_name]
+    # Finite capacity per work center (capacity from master data; undefined stations = infinite).
+    for wc_name, ivs in station_intervals.items():
         if not ivs:
             continue
+        wc = pin.work_centers.get(wc_name)
+        if wc is None:
+            continue  # station not in master data -> treated as infinite capacity
         if wc.capacity == 1:
             model.add_no_overlap(ivs)
         else:
@@ -262,8 +289,10 @@ def _extract(pin, tasks, sol, start, end, presences, tardiness_vars, status_name
                         lead_time_days=m.lead_time_days, cost=cost, ready_day=int(sol.value(end[uid])),
                     ))
         else:
+            station_label = t.station or (f"routed[{'>'.join(op.work_center for op in t.routing)}]"
+                                          if t.routing else "?")
             res.builds.append(BuildSlot(
-                uid=uid, sku=t.sku, station=t.station or "?",
+                uid=uid, sku=t.sku, station=station_label,
                 start=int(sol.value(start[uid])), end=int(sol.value(end[uid])),
             ))
         if t.due_day is not None:

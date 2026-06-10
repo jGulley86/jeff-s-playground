@@ -49,6 +49,23 @@ class BomLine:
     qty_per: float   # quantity of component per 1 unit of parent
 
 
+@dataclass(frozen=True)
+class Operation:
+    """One routing step of a MAKE item (iteration 6).
+
+    Duration of the operation for an order of size `qty` = setup_days + ceil(run_days_per_unit*qty).
+    setup is incurred once per order; run scales with quantity (research §2).
+    """
+    name: str
+    work_center: str
+    setup_days: int = 0
+    run_days_per_unit: float = 0.0
+
+    def duration(self, qty: int) -> int:
+        from math import ceil
+        return self.setup_days + ceil(self.run_days_per_unit * max(qty, 1))
+
+
 @dataclass
 class Item:
     """A part: either MAKE (built in-house) or BUY (purchased)."""
@@ -57,9 +74,10 @@ class Item:
     make_buy: MakeBuy
 
     # --- MAKE attributes ---
-    build_days: int = 0                       # fixed build duration once materials are on hand
-    build_station: str | None = None          # which finite-capacity station builds it
+    build_days: int = 0                       # fixed build duration (fallback when no routing)
+    build_station: str | None = None          # station used when no routing is defined
     bom: list[BomLine] = field(default_factory=list)
+    routing: list[Operation] = field(default_factory=list)  # operation-level routing (iter 6)
 
     # --- BUY attributes ---
     sourcing: list[SourcingMode] = field(default_factory=list)
@@ -82,7 +100,15 @@ class Item:
         shortages, which the scheduler's sourcing optimizer then resolves by expediting (research §7).
         """
         mode = self.default_mode()
-        return mode.lead_time_days if mode else self.build_days
+        if mode:
+            return mode.lead_time_days
+        return self.nominal_build_days()
+
+    def nominal_build_days(self, qty: int = 1) -> int:
+        """Build lead time for MRP: sum of routing op durations if routed, else build_days."""
+        if self.routing:
+            return sum(op.duration(qty) for op in self.routing)
+        return self.build_days
 
 
 @dataclass(frozen=True)
