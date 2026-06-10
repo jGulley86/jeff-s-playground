@@ -15,7 +15,12 @@ and recommends safety stock. Backed by the research in
 | **Build times** | `aps/model.py` | Fixed per-product build duration (the production lead time once materials are on hand). |
 | **Promising** | `aps/promising.py` | Rush-order quoting: achievable date, expedite premium, displaced orders, accept/decline (profit test). |
 | **Safety stock** | `aps/safety_stock.py` | SS / reorder-point / EOQ from demand + lead-time variability. |
+| **Routing** | `aps/model.py` (`Operation`) | Operation-level routings (setup + run/unit per station) as an alternative to fixed build time. |
+| **Uncertainty** | `aps/uncertainty.py` | Safety time (percentile lead times), rolling-horizon replanning, Monte-Carlo service-level simulation. |
+| **Objectives** | `aps/scheduler.py` (`ObjectiveWeights`) | Configurable cost vs on-time vs throughput weighting + `compare_objectives` what-if. |
 | **Ingestion** | `aps/connectors/` | NetSuite (SuiteQL) + Google Drive → `PlanningInput`, transport-agnostic. |
+| **Write-back** | `aps/connectors/writeback.py` | Schedule → NetSuite work-order/PO payloads + exceptions; dry-run by default. |
+| **Report UI** | `aps/report.py` | Dependency-free HTML Gantt + promise dates + sourcing + exceptions. |
 | **Orchestrator** | `run.py` | One CLI that runs the whole pipeline and prints a report. |
 
 ## Quick start
@@ -33,6 +38,7 @@ python run.py --snapshot ns.json       # plan against a live NetSuite snapshot
 python run_mrp.py        # MRP purchasing/build plan
 python run_schedule.py   # finite-capacity schedule + sourcing
 python run_quote.py      # three rush-order quotes
+python run_report.py out.html   # HTML Gantt + exceptions report
 
 # tests (no network, no pytest required)
 for t in tests/test_*.py; do python "$t"; done
