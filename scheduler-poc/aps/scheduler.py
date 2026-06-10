@@ -219,10 +219,10 @@ def schedule(pin: PlanningInput, time_limit_s: float = 15.0) -> ScheduleResult:
     tasks = expand_demand(pin)
     model, start, end, presences, cost_terms, tardiness_terms, tardiness_vars = _build_model(pin, tasks)
 
-    total_tardiness = model.new_int_var(0, pin.horizon_days * len(tardiness_terms or [1]), "total_tard")
-    model.add(total_tardiness == sum(tardiness_terms) if tardiness_terms else 0)
+    total_tardiness = model.new_int_var(0, pin.horizon_days * max(len(tardiness_terms), 1), "total_tard")
+    model.add(total_tardiness == (sum(tardiness_terms) if tardiness_terms else 0))
     total_cost = model.new_int_var(0, 10**9, "total_cost")
-    model.add(total_cost == sum(cost_terms) if cost_terms else 0)
+    model.add(total_cost == (sum(cost_terms) if cost_terms else 0))
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = time_limit_s / 2
