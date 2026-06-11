@@ -8,7 +8,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from aps.connectors.gdrive import DriveIngestor
-from aps.connectors.netsuite import IngestConfig, planning_input_from_snapshot
+from aps.connectors.netsuite import (
+    IngestConfig, planning_input_from_snapshot, _resolve_bom_parent,
+)
 from aps.model import MakeBuy
 
 
@@ -67,6 +69,35 @@ def test_demand_and_inventory_mapped():
     assert pin.on_hand("WHEEL-ASSY") == 60
     assert len(pin.demand) == 1 and pin.demand[0].order_id == "SO-1001"
     assert pin.demand[0].due_day > 0
+
+
+def test_bom_name_resolves_to_parent_assembly():
+    # Real account naming (docs/netsuite-suiteql-findings.md): SlipLift's BOM drops the revision
+    # suffix, Heavy Tray's keeps it. Both must resolve to the right assembly SKU.
+    by_full = {"106136-R04": "106136-R04", "106901-R02": "106901-R02",
+               "106997-R01": "106997-R01"}
+    by_base = {"106136": ["106136-R04"], "106901": ["106901-R02"], "106997": ["106997-R01"]}
+    assert _resolve_bom_parent("106136_BOM1", by_full, by_base) == "106136-R04"      # base fallback
+    assert _resolve_bom_parent("106901-R02_BOM1", by_full, by_base) == "106901-R02"  # full match
+    assert _resolve_bom_parent("106997-R01_BOM1", by_full, by_base) == "106997-R01"
+    assert _resolve_bom_parent("999999_BOM1", by_full, by_base) is None
+
+
+def test_snapshot_resolves_bom_lines_via_bom_name():
+    snap = {
+        "items": [
+            {"sku": "106136-R04", "name": "SLIPLIFT ROBOT", "itemtype": "Assembly"},
+            {"sku": "FRAME-1", "name": "Frame", "itemtype": "InvtPart"},
+        ],
+        # search-layer style: no parent_sku, a bom_name, and a duplicate line across revisions
+        "bom_lines": [
+            {"bom_name": "106136_BOM1", "component_sku": "FRAME-1", "qty_per": 2},
+            {"bom_name": "106136_BOM1", "component_sku": "FRAME-1", "qty_per": 2},
+        ],
+    }
+    pin = planning_input_from_snapshot(snap, day0="2026-06-10")
+    bom = pin.items["106136-R04"].bom
+    assert len(bom) == 1 and bom[0].component == "FRAME-1" and bom[0].qty_per == 2
 
 
 def test_drive_reader_maps_forecast_and_inventory():

@@ -24,6 +24,7 @@ A snapshot can be dumped/loaded as JSON so an agent-side live pull feeds the sta
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Callable, Protocol
 
@@ -40,58 +41,84 @@ QueryFn = Callable[[str], list[dict]]
 # --------------------------------------------------------------------------------------------------
 
 class SuiteQL:
-    # Items with planning attributes. `isphantom`/`leadtime`/`safetystocklevel` are item fields.
+    """SuiteQL queries, corrected against the LIVE account (docs/netsuite-suiteql-findings.md,
+    verified 2026-06-11). Key facts baked in here:
+
+      * `item.leadtime`/`safetystocklevel` do NOT exist in this account — items carry only
+        itemid/displayname/itemtype/cost. Build times come from a maintained per-product config;
+        purchase lead time comes from the per-vendor sourcing table (or a maintained override).
+      * Every `*.item` reference (bomrevisioncomponent, itemvendor, inventorybalance,
+        transactionline) is an internal id — we JOIN `item` and select `itemid` so the SKU
+        strings match the items map.
+      * BOM chain is bomrevisioncomponent.bomrevision -> bomrevision.id, then
+        bomrevision.billofmaterials -> bom.id. `bom.name` encodes the parent assembly; the
+        snapshot mapper resolves parent_sku from `bom_name` (see _resolve_bom_parents).
+      * Inventory is `inventorybalance` (NOT aggregateitemlocation).
+
+    Namespace note: the MCP search layer lacks GROUP BY and some fields; the REST SuiteQL path
+    (pull_netsuite.py) supports both. Lines that need REST (the current-revision subquery) are
+    flagged; on the search layer, fetch all revisions and let _resolve_bom_parents keep the latest.
+    """
+
+    # Items. No leadtime/safetystock columns exist here; `cost` is the standard/last cost.
     ITEMS = """
         SELECT i.itemid AS sku, i.displayname AS name, i.itemtype AS itemtype,
-               i.leadtime AS lead_time, i.safetystocklevel AS safety_stock
+               i.cost AS unit_cost
         FROM item i
         WHERE i.isinactive = 'F'
     """
 
-    # Bill of materials: parent assembly -> component + quantity. Uses Advanced BoM records (§9.2);
-    # adjust table/field names (bom, bomrevision, bomrevisioncomponent) to your account.
+    # Bill of materials: component lines with their parent BOM name + current-revision filter.
+    # parent_sku is resolved from bom_name by the mapper. The MAX-revision subquery needs REST
+    # SuiteQL; on the MCP search layer drop the AND r.id IN (...) clause and dedupe in the mapper.
     BOM_LINES = """
-        SELECT b.assembly AS parent_sku, c.item AS component_sku, c.quantity AS qty_per
+        SELECT b.name AS bom_name, ci.itemid AS component_sku,
+               c.quantity AS qty_per, c.itemsource AS item_source
         FROM bomrevisioncomponent c
         JOIN bomrevision r ON c.bomrevision = r.id
-        JOIN bom b ON r.bom = b.id
-        WHERE r.iscurrentrevision = 'T'
+        JOIN bom b ON r.billofmaterials = b.id
+        JOIN item ci ON c.item = ci.id
+        WHERE r.id IN (SELECT MAX(r2.id) FROM bomrevision r2 GROUP BY r2.billofmaterials)
     """
 
-    # RAW per-vendor sourcing rows (cost + purchase lead time) — the fuel for our sourcing optimizer.
-    # itemvendor sublist holds per-vendor purchaseprice; vendor lead time may live on the
-    # item/vendor relationship (§9.3 — verify). One row per (item, vendor).
+    # RAW per-vendor sourcing rows. purchaseprice is per-vendor; lead time is NOT a column in this
+    # account (see findings) so it is omitted here and supplied by a maintained lead-time override
+    # or defaulted by the mapper. One row per (item, vendor).
     VENDOR_SOURCING = """
-        SELECT iv.item AS sku, v.entityid AS supplier, iv.purchaseprice AS cost,
-               iv.leadtime AS lead_time
+        SELECT ii.itemid AS sku, v.entityid AS supplier, iv.purchaseprice AS cost
         FROM itemvendor iv
+        JOIN item ii ON iv.item = ii.id
         JOIN vendor v ON iv.vendor = v.id
     """
 
-    # On-hand by location (§9.3: with Multiple Locations, read the location-level table, not item).
+    # On-hand by location, per the verified inventorybalance table.
     INVENTORY = """
-        SELECT il.item AS sku, BUILTIN.DF(il.location) AS location, il.quantityonhand AS on_hand
-        FROM aggregateitemlocation il
-        WHERE il.quantityonhand > 0
+        SELECT ii.itemid AS sku, BUILTIN.DF(ib.location) AS location, ib.quantityonhand AS on_hand
+        FROM inventorybalance ib
+        JOIN item ii ON ib.item = ii.id
+        WHERE ib.quantityonhand > 0
     """
 
-    # Open purchase orders = scheduled receipts. mainline='F' -> line rows (§9.4).
+    # Open purchase orders = scheduled receipts. mainline='F' -> component/item lines. PO header
+    # carries duedate (verified populated). Closed/cancelled excluded via status<>'H'... see note:
+    # status codes here are single-char; tune the exclusion set against your open-PO definition.
     OPEN_PO = """
-        SELECT tl.item AS sku, tl.quantity AS qty, t.duedate AS due_date
+        SELECT ii.itemid AS sku, tl.quantity AS qty, t.duedate AS due_date
         FROM transaction t
         JOIN transactionline tl ON tl.transaction = t.id
-        WHERE t.type = 'PurchOrd' AND t.status IN ('PurchOrd:B','PurchOrd:D','PurchOrd:E')
-              AND tl.mainline = 'F'
+        JOIN item ii ON tl.item = ii.id
+        WHERE t.type = 'PurchOrd' AND tl.mainline = 'F' AND tl.quantity > 0
     """
 
-    # Independent demand = open sales orders (finished goods to deliver).
+    # Independent demand = open sales orders. NOTE: SO header duedate is null in this account;
+    # prefer the Drive forecast for demand timing. Kept for accounts that populate due dates.
     OPEN_SO = """
-        SELECT t.tranid AS order_id, tl.item AS sku, tl.quantity AS qty,
+        SELECT t.tranid AS order_id, ii.itemid AS sku, tl.quantity AS qty,
                t.duedate AS due_date, tl.netamount AS revenue
         FROM transaction t
         JOIN transactionline tl ON tl.transaction = t.id
-        WHERE t.type = 'SalesOrd' AND t.status IN ('SalesOrd:B','SalesOrd:D','SalesOrd:E')
-              AND tl.mainline = 'F'
+        JOIN item ii ON tl.item = ii.id
+        WHERE t.type = 'SalesOrd' AND tl.mainline = 'F' AND tl.quantity > 0
     """
 
 
@@ -143,6 +170,32 @@ def _to_days(due_date: str, day0: str | None) -> int:
     return 0
 
 
+_BOM_SUFFIX = re.compile(r"_BOM\d+$", re.IGNORECASE)
+
+
+def _bom_name_to_core(bom_name: str) -> str:
+    """`106901-R02_BOM1` -> `106901-R02`; `106136_BOM1` -> `106136`."""
+    return _BOM_SUFFIX.sub("", str(bom_name)).strip()
+
+
+def _base_part(sku: str) -> str:
+    """Part number before the first revision/variant separator: `106136-R04` -> `106136`."""
+    return str(sku).split("-")[0].split("_")[0]
+
+
+def _resolve_bom_parent(bom_name: str, by_full: dict, by_base: dict) -> str | None:
+    """Map a BOM name to its parent assembly SKU. The account encodes the parent in the BOM name
+    but inconsistently (sometimes with the revision, sometimes without) and exposes no FK, so we
+    prefer a full-itemid match and fall back to the base part number (see findings doc)."""
+    core = _bom_name_to_core(bom_name)
+    if core in by_full:
+        return core
+    cands = by_base.get(_base_part(core))
+    if cands:
+        return sorted(cands)[-1]  # latest revision suffix, deterministic
+    return None
+
+
 def _itemtype_to_makebuy(itemtype: str | None) -> MakeBuy:
     # NetSuite assembly/kit -> MAKE; inventory/non-inventory purchased -> BUY (verify mapping).
     if (itemtype or "").lower() in ("assembly", "assemblyitem", "kit"):
@@ -166,10 +219,23 @@ def planning_input_from_snapshot(snap: dict, cfg: IngestConfig | None = None,
             safety_stock=int(row.get("safety_stock") or 0),
         )
 
-    # 2) BOM lines
+    # 2) BOM lines. Rows carry either an explicit parent_sku or a bom_name we resolve to the
+    # parent assembly. Dedup guards against multi-revision duplication on the search-layer path.
+    by_full = {sku: sku for sku in items}
+    by_base: dict[str, list[str]] = {}
+    for sku in items:
+        by_base.setdefault(_base_part(sku), []).append(sku)
+    seen_links: set[tuple[str, str]] = set()
     for row in snap.get("bom_lines", []):
-        parent, comp = str(row["parent_sku"]), str(row["component_sku"])
-        if parent in items:
+        comp = str(row["component_sku"])
+        parent = row.get("parent_sku")
+        if parent is None and row.get("bom_name") is not None:
+            parent = _resolve_bom_parent(row["bom_name"], by_full, by_base)
+        if parent is None:
+            continue
+        parent = str(parent)
+        if parent in items and (parent, comp) not in seen_links:
+            seen_links.add((parent, comp))
             items[parent].bom.append(BomLine(comp, float(row.get("qty_per") or 1)))
 
     # 3) vendor sourcing -> SourcingMode list (optionally synthesize an air/expedite alternative)

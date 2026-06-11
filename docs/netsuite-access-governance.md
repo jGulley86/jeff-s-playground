@@ -25,8 +25,18 @@ later, behind an explicit dry-run gate — writes planned work orders / purchase
 
 1. Approve creation of one **Integration record** ("APS Scheduler — read") with OAuth 2.0
    client credentials, mapped to a service user + the least-privilege read role above.
-2. A home for the private key (secret manager entry) and a rotation cadence (e.g. 90 days).
-3. (Phase 2, separate review) a write-scoped role for planned WO/PO creation.
+2. The read role MUST include the **REST Web Services** feature/permission. Verified 2026-06-11:
+   the role currently reachable via the MCP connector lacks it — full REST SuiteQL and the
+   `metadata-catalog` return HTTP 403 `INSUFFICIENT_PERMISSION`. Without it, only NetSuite's
+   restricted SuiteAnalytics *search* namespace is available (no `GROUP BY`, reduced field set);
+   see `docs/netsuite-suiteql-findings.md`.
+3. A home for the private key (secret manager entry) and a rotation cadence (e.g. 90 days).
+4. (Phase 2, separate review) a write-scoped role for planned WO/PO creation.
+
+**Data note for planners:** purchase **lead time is not a queryable field** in this account
+(`item.leadtime` / `itemvendor.leadtime` don't exist). The sourcing optimizer needs it, so plan to
+**maintain a per-vendor/per-item lead-time table** alongside the snapshot (or confirm a custom
+field on the REST path). Details and the full verified schema are in the findings doc.
 
 ## Kill switch
 
