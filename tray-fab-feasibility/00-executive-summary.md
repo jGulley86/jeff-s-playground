@@ -1,9 +1,20 @@
-# Executive Summary — In-House Tray Fabrication (Loop 50 final)
+# Executive Summary — In-House Tray Fabrication (Loop 50 + 100-simulation update)
 
-**Recommendation: HYBRID — proceed through three gates.** Weld the Heavy Tray weldment
-(106900) and Wood Tray legs in-house from purchased laser-cut tube and formed-sheet kits;
-outsource powder coat; keep buying steel decks, heavy legs, wood-tray piece parts, and
-hardware. No cutting, forming, or coating equipment at current volume.
+**Recommendation: HYBRID, lean-staged configuration — proceed through three gates.**
+Weld the Heavy Tray weldment (106900) and Wood Tray legs in-house from purchased
+laser-cut tube and formed-sheet kits; outsource powder coat; keep buying steel decks,
+heavy legs, wood-tray piece parts, and hardware. No cutting, forming, or coating
+equipment at current volume.
+
+**100-simulation update (2026-06-11, `07-capital-efficiency-simulation.md`):** Monte
+Carlo across demand, quotes, hours, steel, wages, and failure modes retired the original
+$504K equipment plan — it never won in 100 worlds. The winning configuration (**C,
+lean-staged**) buys the same 22/mo capacity for **$268K** (modular fixture, 2-ton mobile
+gantries, 2 pulse MIGs, trigger-based hiring) plus a **$75K pre-engineered upgrade kit
+ordered only when demand sustains >20/mo**: median 5-yr NPV ≈ **$1.0M**, cash trough
+≈ **−$430K**, payback ≈ 23 months, NPV-positive in 89% of worlds, lowest regret of any
+strategy. Renegotiating with TEEMS (6–12% off, no build) remains the pre-priced floor —
+100% safe, but a median ~$540K left on the table.
 
 **The decision is the gates, not a forecast.** Three sequential commitments, each with
 pre-written exit criteria and a capped downside:
@@ -31,16 +42,16 @@ model — a successful outcome, not a failure.
 
 ## The numbers (cash basis, Loop-49 audited)
 
-| Metric | Value |
+| Metric | Value (configuration C) |
 |---|---|
 | Make variable cost / weldment | $3,352 (kits $2,035 + powder $425 + labor $667 + consumables/CoQ) |
 | Contribution / weldment | **$2,226** |
-| Net cash savings at 20/mo | **≈ +$155K/yr** (yr-1 ≈ +$120K) |
-| At 30/mo / 40/mo (2 shifts) | ≈ +$270K / +$525K per yr |
-| Cash breakeven volume | ≈ 15 heavy/mo |
-| Capex / cash trough | $504K / ≈ −$700K at M6–M7 (lease option: −$380K) |
-| 5-yr NPV @10% | ≈ $0 flat · **+$310K growth path** (IRR ≈ 9% / 22%) |
-| Team / space / SOP | 5 FTE · 9,000 SF at 1275 Oakbrook · month 7 |
+| Net cash savings at 20/mo | **≈ +$185K/yr** (lower fixed base than the $504K plan) |
+| Cash breakeven volume | ≈ 12–13 heavy/mo |
+| Capex / cash trough | **$268K (+$75K trigger kit)** / median trough ≈ **−$430K** |
+| 5-yr NPV (100 sims) | median **+$1.0M**, P10 −$8K, 89% of worlds positive |
+| Median payback | ≈ 23 months |
+| Team / space / SOP | **3.5 FTE day one (lead + 2 welders + contract CWI), triggers for the rest** · 6,500 SF (+3,000 reserved) at 1275 Oakbrook · month 7 |
 
 Stated plainly: **at flat current volume this is roughly NPV-neutral — the project is
 justified by the growth path, the vendor capacity wall, the rev-churn tax, and the

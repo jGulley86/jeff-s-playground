@@ -1,0 +1,29 @@
+strategy         meanNPV     P10     P50     P90   %>0  trough50  trough10 payback50
+A_ultra_lean         486      77     515     871   91%      -361      -445        24
+C_lean_staged        855      -8    1012    1595   89%      -431      -521        23
+B_base               320    -869     562    1232   72%      -731     -1112        33
+D_capacity_fwd       369   -1361     608    1883   62%      -931     -1745        35
+E_renegotiate        520     154     398     987  100%       -15       -15         4
+
+Wins (best NPV on the same world-draw):
+  A_ultra_lean       8 /100
+  C_lean_staged     40 /100
+  B_base             0 /100
+  D_capacity_fwd    31 /100
+  E_renegotiate     21 /100
+
+Median NPV ($K) by realized 5-yr demand-growth regime:
+strategy             shrink <1.0    flat 1.0-1.1   grow 1.1-1.35      fast >1.35
+A_ultra_lean                 178             656             662             492
+C_lean_staged                 99            1142            1240            1091
+B_base                      -718             617             875             745
+D_capacity_fwd             -1225             154            1169            1757
+E_renegotiate                284             357             671             876
+n in band                     31              18              32              19
+
+Regret vs best choice per draw, median/P90 ($K):
+  A_ultra_lean     median    559   P90   1221
+  C_lean_staged    median    125   P90    733
+  B_base           median    743   P90   1198
+  D_capacity_fwd   median    622   P90   1682
+  E_renegotiate    median    543   P90   1340

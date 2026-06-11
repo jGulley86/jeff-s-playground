@@ -39,6 +39,13 @@ bent sheets remain purchased; lumber decking is assembly scope.
 
 ## 2. Equipment list
 
+> **Superseded by simulation (2026-06-11):** the 100-run Monte Carlo in
+> `07-capital-efficiency-simulation.md` retired this $504K configuration (0 wins in 100
+> worlds) in favor of the **$268K lean-staged configuration C** — modular fixture, 2-ton
+> mobile gantries instead of 5-ton runways, 2 pulse MIGs + used backup, portable fume,
+> trigger-based hires, and a pre-engineered $75K upgrade kit ordered only at sustained
+> >20/mo. The table below is retained as the comparison baseline.
+
 | Item | Spec | Qty | New/Used | Cost | Lead | Footprint / utilities |
 |---|---|---|---|---|---|---|
 | Heavy weldment fixture | 16-ft certified fixture, hydraulic clamps, Slip-owned design | 1 | New build | $85K | 10–14 wk | 20×8 ft |
