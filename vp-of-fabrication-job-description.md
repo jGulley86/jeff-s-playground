@@ -3,7 +3,6 @@
 **Location:** Norcross, GA (on-site)
 **Reports to:** Chief Operations Officer
 **Type:** Full-time, Executive
-**Keywords:** Metal Fabrication, Sheet Metal, VP Manufacturing, Fabrication Operations, Theory of Constraints
 
 ---
 
