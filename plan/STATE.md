@@ -8,7 +8,7 @@
 | # | Stage | Status | Date | File |
 |---|-------|--------|------|------|
 | 0 | Context interview | DONE | 2026-06-11 | 00-inputs.md |
-| 1 | Where we are | PENDING | — | 01-context.md |
+| 1 | Where we are | DONE | 2026-06-12 | 01-context.md |
 | 2 | Objectives | PENDING | — | 02-objectives.md |
 | 3 | Initiatives | PENDING | — | 03-initiatives.md |
 | 4 | Org & talent | PENDING | — | 04-org.md |
