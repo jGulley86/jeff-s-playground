@@ -12,7 +12,7 @@
 | 2 | Objectives | DONE | 2026-06-12 | 02-objectives.md |
 | 3 | Initiatives | DONE | 2026-06-12 | 03-initiatives.md |
 | 4 | Org & talent | DONE | 2026-06-12 | 04-org.md |
-| 5 | Budget | PENDING | — | 05-budget.md |
+| 5 | Budget | DONE | 2026-06-12 | 05-budget.md |
 | 6 | KPIs & cadence | PENDING | — | 06-cadence.md |
 | 7 | Risks | PENDING | — | 07-risks.md |
 | 8 | Summary | PENDING | — | 08-summary.md |
