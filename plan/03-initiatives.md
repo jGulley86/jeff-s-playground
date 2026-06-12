@@ -14,13 +14,13 @@ The full Tray bill gets a should-cost, parts are ranked by cost leverage, and ev
 - **Handoffs:** Anjana → Lan (agreements to purchase orders), Anjana → Marques (new-supplier qualification). Spec-relaxation requests go to Engineering through 1B's channel — one front door, not two.
 - **Kill criteria:** any part where resourcing can't reach target by September moves to redesign (1B) or fabrication (3B) — no part stays in negotiation past September hoping.
 
-### 1B. Redesign-to-cost with Engineering — Owner: Joe
-Engineering outside ops owns Tray's design. Joe is the single ops-side integrator: he carries cost targets in, carries design releases out, and owns the interface so the program has one throat to choke on our side.
+### 1B. Redesign-to-cost with Engineering — Owner: Anjana
+Engineering outside ops owns Tray's design. There is no separate integrator seat: the work runs as a standing Engineering–supply-chain collaboration, with Anjana accountable on the ops side — cost targets and design trade-offs live in one place.
 - **July:** joint target-setting with Engineering; subsystems chosen from 1A's ranking; Engineering staffing committed in writing.
 - **August–October:** design releases in monthly batches, each pre-signed by Marques at release rather than qualified after — quality is in the review, not behind it.
 - **November:** production-intent Tray units built at the new cost; buffer for late releases.
 - **December:** done means built units, not released drawings.
-- **Handoffs:** Joe ↔ Engineering (targets in, releases out), Engineering → Eric (build). Two handoffs; Marques embedded, not appended.
+- **Handoffs:** Anjana ↔ Engineering (targets in, releases out), Engineering → Eric (build). Two handoffs; Marques embedded, not appended.
 - **Kill criteria:** if Engineering hasn't staffed the program by end of August, Jeff escalates to Chris — this initiative cannot be willed into existence from inside ops. Any subsystem whose redesign saves less than its qualification cost gets dropped back to 1A.
 
 ## Objective 2 — Make every customer site a reference
@@ -28,10 +28,10 @@ Engineering outside ops owns Tray's design. Joe is the single ops-side integrato
 ### 2A. Installed-base health to zero watch-list — Owner: Rasheen
 Every account reviewed, a watch list named honestly, every flagged site remediated — Tray's early units held to the same bar as the established product.
 - **July:** account-by-account health review done; watch list named.
-- **August–September:** remediation at every flagged site; Joe's team supplies fixes; Marques runs root-cause on repeat field failures.
+- **August–September:** remediation at every flagged site; Eric's manufacturing engineers supply product fixes; Marques runs root-cause on repeat field failures.
 - **October:** watch list at zero; reference enablement (site visits, call list) live for the sales team.
 - **November–December:** hold it there through peak season.
-- **Handoffs:** Rasheen → Joe (technical fixes), Rasheen → Marques (root-cause).
+- **Handoffs:** Rasheen → Eric (product fixes), Rasheen → Marques (root-cause).
 - **Kill criteria:** any account unrecoverable for product reasons gets an exit-or-replace decision by October — field capacity stops being spent on it indefinitely.
 
 ### 2B. Field service system, scope-frozen — Owner: Rasheen
@@ -40,7 +40,7 @@ The inherited rollout finishes, justified strictly by cost-to-serve and response
 - **August–September:** deployed to all field teams.
 - **October:** legacy tools retired — running two systems is a cost increase, not a rollout.
 - **November:** buffer.
-- **Handoffs:** Rasheen → Joe (integrations), Rasheen → Gaby (service data into finance for cost-to-serve reporting).
+- **Handoffs:** integrations stay inside Rasheen's org with vendor support, Rasheen → Gaby (service data into finance for cost-to-serve reporting).
 - **Kill criteria:** any feature that misses the freeze gate stays cut until 2027 — no quiet scope return.
 
 ## Objective 3 — Stand up the Fabrication Organization
@@ -72,12 +72,13 @@ Fabrication scope is chosen by cost leverage, not by what's fun to own. Sheet me
  ├─→ 1B subsystem selection (Jul) → Engineering releases (Aug–Oct) → built units (Nov–Dec)
  └─→ 3A make-vs-buy (Jul) → equipment order (Aug) ─┐
 3C consolidation (Jul–Sep) ────────────────────────┴─→ 3B install (Oct) → parts at cost (Nov–Dec)
-2A and 2B run parallel to everything above; they share Joe and Marques, not milestones.
+2A and 2B run parallel to everything above; they share Eric's engineers and Marques, not milestones.
 ```
 
 **Critical path:** should-cost → make-versus-buy → equipment order → consolidated factory → install → parts at cost. The buffer protecting it is the August equipment-order date.
 
 **Constraint candidates from load:**
 - **Marques is on the critical path of four initiatives** (1A supplier qualification, 1B release sign-off, 2A root-cause, 3B process qualification). Quality is the plan's hidden constraint candidate — addressed in 04-org.
-- **Joe carries three** (1B integration, 2A fixes, 2B integrations). Watch, don't act yet.
+- **Anjana carries both of the largest cost levers** (1A and 1B) and feeds 3A. The cost engineer hire in 04-org is her relief valve; if that seat is empty past July, she is the constraint.
+- **Eric carries the consolidation, the fabrication build, and product fixes for the installed base.** His manufacturing engineering bench is the watch item.
 - **Engineering outside ops** gates the single largest cost lever and answers to neither Jeff nor this plan — the plan's biggest external dependency, escalation pre-agreed in 1B.
