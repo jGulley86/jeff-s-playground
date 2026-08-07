@@ -1,0 +1,979 @@
+<!-- SLIP Robotics — SlipLift Production Scheduler
+     Single-file tool: no external dependencies, works offline, embeddable in the MES via <iframe> or as a static page.
+     Data seeds: mbom_tree_260805_1436_ET_edited.xlsx (operations_all) + BOY_Manufacturing_Headcount_TopsDown.xlsx (8/4/2026). -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SlipLift Production Scheduler</title>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f0efec;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --good-text:#006300; --crit-text:#b02a2a;
+  --accent:#2a78d6; --accent-ink:#ffffff;
+  --input-bg:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#242423;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    --good-text:#0ca30c; --crit-text:#e66767;
+    --accent:#3987e5; --accent-ink:#ffffff;
+    --input-bg:#111110;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --surface-2:#242423;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --good-text:#0ca30c; --crit-text:#e66767;
+  --accent:#3987e5; --accent-ink:#ffffff;
+  --input-bg:#111110;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;}
+header.app{display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--grid);}
+header.app .brand{display:flex;flex-direction:column}
+header.app .brand b{font-size:17px;letter-spacing:.2px}
+header.app .brand span{color:var(--ink-2);font-size:12px}
+header.app .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--ring);
+  border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--axis)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+button.small{padding:3px 9px;font-size:12.5px}
+nav.tabs{display:flex;gap:2px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--grid);overflow-x:auto}
+nav.tabs button{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;
+  padding:10px 14px;color:var(--ink-2);white-space:nowrap}
+nav.tabs button.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1240px;margin:0 auto;padding:18px 20px 60px}
+.alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.alert{display:flex;gap:10px;align-items:baseline;padding:9px 14px;border-radius:8px;
+  background:var(--surface);border:1px solid var(--ring);border-left:4px solid var(--axis)}
+.alert.crit{border-left-color:var(--crit)}
+.alert.warn{border-left-color:var(--warn)}
+.alert.good{border-left-color:var(--good)}
+.alert .tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:15px}
+.card .sub{color:var(--ink-2);font-size:12.5px;margin:0 0 12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px}
+.kpi .label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+.kpi .value{font-size:26px;font-weight:650;margin-top:2px}
+.kpi .value small{font-size:14px;font-weight:500;color:var(--ink-2)}
+.kpi .note{font-size:12px;color:var(--ink-2);margin-top:2px}
+.kpi .note .up{color:var(--good-text)} .kpi .note .down{color:var(--crit-text)}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;font-weight:600;border:1px solid transparent}
+.chip.ok{color:var(--good-text);border-color:var(--good)}
+.chip.late{color:var(--crit-text);border-color:var(--crit)}
+.chip.tight{color:var(--ink-2);border-color:var(--warn)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin:6px 0 2px}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+table.data{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+table.data th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);
+  text-align:left;padding:6px 8px;border-bottom:1px solid var(--axis);white-space:nowrap}
+table.data td{padding:5px 8px;border-bottom:1px solid var(--grid);vertical-align:middle}
+table.data tr:hover td{background:var(--surface-2)}
+table.data td.num,table.data th.num{text-align:right}
+.tablewrap{overflow-x:auto}
+input[type=number],input[type=text],input[type=date],select{
+  font:inherit;color:var(--ink);background:var(--input-bg);border:1px solid var(--axis);
+  border-radius:5px;padding:4px 7px;font-variant-numeric:tabular-nums}
+input[type=number]{width:76px;text-align:right}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px 24px}
+.formgrid label{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--ink-2)}
+.svgwrap{overflow-x:auto}
+svg text{font:11.5px system-ui,-apple-system,"Segoe UI",sans-serif;fill:var(--muted)}
+svg .lbl{fill:var(--ink-2)} svg .lbl-strong{fill:var(--ink);font-weight:600}
+#tooltip{position:fixed;pointer-events:none;z-index:50;display:none;max-width:290px;
+  background:var(--surface);color:var(--ink);border:1px solid var(--ring);border-radius:8px;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);padding:8px 11px;font-size:12.5px}
+#tooltip .t{font-weight:650;margin-bottom:3px}
+#tooltip .row{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}
+.help p{max-width:72ch}
+.help h3{margin:18px 0 6px;font-size:14px}
+.help code{background:var(--surface-2);border:1px solid var(--ring);border-radius:4px;padding:1px 5px;font-size:12.5px}
+.muted{color:var(--ink-2)}
+@media print{
+  header.app .actions,nav.tabs,#tooltip{display:none!important}
+  body{background:#fff;color:#000}
+  .card,.kpi{border-color:#bbb;break-inside:avoid}
+  main{max-width:none;padding:0}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<header class="app">
+  <div class="brand">
+    <b>SlipLift Production Scheduler</b>
+    <span id="hdr-sub">SLIP Robotics · finite-capacity schedule · BOY 2026</span>
+  </div>
+  <div class="actions">
+    <button id="btn-export-csv" class="small">Export schedule CSV</button>
+    <button id="btn-export" class="small">Export data JSON</button>
+    <button id="btn-import" class="small">Import data JSON</button>
+    <input type="file" id="file-import" accept=".json" style="display:none">
+    <button id="btn-print" class="small">Print</button>
+    <button id="btn-reset" class="small">Reset to seed data</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<main id="main"></main>
+<div id="tooltip" role="status"></div>
+
+<script>
+'use strict';
+/* ============================== SEED DATA ==============================
+   Extracted 2026-08-07 from mbom_tree_260805_1436_ET_edited.xlsx (operations_all)
+   and BOY_Manufacturing_Headcount_TopsDown.xlsx (Jeff's inputs, 8/4/2026). */
+const SEED_PHASES=["Lineside Install","COTS Modifications","Flashed Devices","Major Subassemblies","Peripheral Subassemblies"];
+const SEED_OPS=[[0,1,"install FR/ BL motor module",20,40,2,"M"],[0,2,"install FL/BR motor module",20,40,2,"M"],[0,3,"install scissor lift",45,180,4,"M"],[0,4,"install lift sensor assemblies",4,16,4,"M"],[0,5,"install/ route all cross-bot harnesses and cables",120,120,1,"M"],[0,6,"install hydraulic manifolds/ terminate and adjust manual release cables",4,8,2,"M"],[0,7,"Install lineside hydraulics F/B",120,240,2,"M"],[0,8,"install hall sensor wire retainers under chassis with lifts fully extened",5,20,4,"M"],[0,9,"install gas springs",10,40,4,"M"],[0,10,"Install Scissor lift top plate accessories",10,40,4,"M"],[0,11,"install computer carrier plate",5,5,1,"M"],[0,12,"install LOTO carrier plate",3,3,1,"M"],[0,13,"install safety carrier plate",3,3,1,"M"],[0,14,"install charge carrier plate",5,5,1,"M"],[0,15,"install aux battery carrier plate",25,25,1,"M"],[0,16,"install aux battery strikeplate cover",10,10,1,"M"],[0,17,"Install F/B spotlights",5,10,2,"M"],[0,18,"Install side spotlights",5,20,4,"M"],[0,19,"Install F camera",5,5,1,"M"],[0,20,"Install B camera",5,5,1,"M"],[0,21,"Install Towing switches",5,10,2,"M"],[0,22,"install F lidar",5,5,1,"M"],[0,23,"install B lidar",5,5,1,"M"],[0,24,"install L lidar",5,5,1,"M"],[0,25,"install R lidar",10,10,1,"M"],[0,26,"install FR/BL estops",7,14,2,"M"],[0,27,"install FL/BR estops",7,14,2,"M"],[0,28,"install middle estops",5,10,2,"M"],[0,29,"install FR LED assembly",1,2,2,"M"],[0,30,"install FL LED assembly",1,2,2,"M"],[0,31,"install RFID reader assembly",3,3,1,"M"],[0,32,"install GPS/ LTE antenna bracket",3,3,1,"M"],[0,33,"install grounding chain",2,2,1,"M"],[0,34,"install wall charger plug bracket",4,4,1,"M"],[0,35,"install batteries and wiring",75,75,1,"M"],[0,45,"install clipnut brackets and clipnuts for covers",20,20,1,"M"],[0,46,"install gasket tape for covers",45,45,1,"M"],[0,36,"Terminate Chassis Wiring to Computer Carrier Plate",100,100,1,"M"],[0,37,"Terminate Chassis Wiring to Aux Battery Carrier Plate",10,10,1,"M"],[0,38,"Terminate Chassis Wiring to LOTO Carrier Plate",40,40,1,"M"],[0,39,"Terminate Chassis Wiring to Charge Carrier Plate",20,20,1,"M"],[0,40,"Terminate Chassis Wiring to Safety Carrier Plate",20,20,1,"M"],[0,41,"Terminate Chassis Wiring at Front Hydraulic Bay",30,30,1,"M"],[0,42,"Terminate Chassis Wiring at Rear Hydraulic Bay",30,30,1,"M"],[0,43,"Complete Pre-Turn on Checks",10,10,1,"M"],[0,44,"Complete Post-Turn on Checks",120,120,1,"M"],[0,47,"Drop robot off of casters",30,30,1,"M"],[0,48,"Align and calibrate all LiDAR",45,45,1,"M"],[0,49,"Perform functional testing",180,180,1,"M"],[0,50,"install wheel fender covers",5,20,4,"M"],[0,51,"install F/B plastic end covers",15,30,2,"M"],[0,52,"install hydraulic cylinder covers",5,10,2,"M"],[0,53,"install large middle front cover",25,25,1,"M"],[0,54,"install large middle back cover",25,25,1,"M"],[0,55,"apply all decals",50,50,1,"M"],[1,1,"Assemble string potentiometer harness",20,80,1,"B"],[1,2,"Assemble Proximity sensor harness",7,28,1,"B"],[1,3,"assemble LED module",20,160,1,"B"],[1,4,"assemble aux battery limit switch harness",15,15,1,"B"],[1,5,"assemble spotlight harness",10,60,1,"B"],[1,6,"assemble motor harness",100,400,1,"B"],[1,7,"assemble DCV harness",25,50,1,"B"],[1,8,"assemble battery balancer harness",35,35,1,"B"],[1,9,"asssemble F LiDAR data harness",15,15,1,"B"],[1,10,"asssemble B LiDAR data harness",15,15,1,"B"],[1,11,"asssemble L LiDAR data harness",15,15,1,"B"],[1,12,"asssemble R LiDAR data harness",15,15,1,"B"],[1,13,"assemble F LiDAR power harness",10,10,1,"B"],[1,14,"assemble B LiDAR power harness",10,10,1,"B"],[1,15,"assemble L LiDAR power harness",10,10,1,"B"],[1,16,"assemble R LiDAR power harness",10,10,1,"B"],[1,17,"solder RFID Reader to headers",20,40,1,"B"],[2,1,"Assemble and flash jetson",30,60,1,"B"],[2,2,"Flash arduino uno and connect RFID reader",5,10,1,"B"],[2,3,"Flash Arduino OPTA",5,5,1,"B"],[2,4,"Flash Front Motor Controller",5,5,1,"B"],[2,5,"Flash Back Motor Controller",5,5,1,"B"],[2,6,"Flash Front LiDAR",5,5,1,"B"],[2,7,"Flash Back LiDAR",5,5,1,"B"],[2,8,"Flash Left LiDAR",5,5,1,"B"],[2,9,"Flash Right LiDAR",5,5,1,"B"],[2,10,"Flash F Camera",5,5,1,"B"],[2,11,"Flash B Camera",5,5,1,"B"],[2,12,"Asssemble, flash and test safety system",25,25,1,"B"],[2,13,"Configure output voltage on Orion DC/DC",10,10,1,"B"],[2,14,"Flash FORT VSC to Prod WES (tool)",10,10,1,"B"],[2,15,"Configure SVR1000",5,5,1,"B"],[2,16,"Flash Robot Xbee Controller",15,15,1,"B"],[2,17,"Assemble and configure router",15,15,1,"B"],[2,18,"Assemble and configure serial device hub",10,10,1,"B"],[3,1,"Assemble FL motor module assembly",75,150,1,"B"],[3,2,"Assemble FR motor module assembly",75,150,1,"B"],[3,3,"Assemble scissor lift assembly",65,260,1,"B"],[3,4,"Assemble computer carrier plate",180,180,1,"B"],[3,5,"Assemble LOTO carrier plate",60,60,1,"B"],[3,6,"Assemble safety carrier plate",25,25,1,"B"],[3,7,"Assemble charge carrier plate",20,20,1,"B"],[3,8,"Assemble aux battery carrier plate",110,110,1,"B"],[3,9,"Assemble HPU",5,10,1,"B"],[3,10,"Assemble hydraulic manifold",53,212,1,"B"],[3,11,"Assemble hydraulic cylinder",5,20,1,"B"],[4,1,"assemble FL/ BR Estop",3,6,1,"B"],[4,2,"assemble FR/BL Estop",3,6,1,"B"],[4,3,"assemble Middle estop",3,6,1,"B"],[4,4,"assemble F camera assembly",5,5,1,"B"],[4,5,"assemble B camera assembly",5,5,1,"B"],[4,6,"assemble towing switch assembly",3,6,1,"B"],[4,7,"assemble F LiDAR assembly",3,3,1,"B"],[4,8,"assemble B LiDAR assembly",3,3,1,"B"],[4,9,"assemble L LiDAR assembly",3,3,1,"B"],[4,10,"assemble R LiDAR assembly",3,3,1,"B"],[4,11,"assemble F/B spotlight assembly",10,20,1,"B"],[4,12,"assemble Side spotlight assembly",10,40,1,"B"],[4,13,"assemble FR/ BL LED assembly",5,10,1,"B"],[4,14,"assemble FL/ BR LED assembly",5,10,1,"B"],[4,15,"assemble RFID reader assembly",15,15,1,"B"],[4,16,"assemble lift sensors assembly",5,20,1,"B"],[4,17,"assemble aux batt strikeplate assembly",5,5,1,"B"]];
+
+function seedState(){
+  const ops = SEED_OPS.map((r,i)=>({id:'op'+(i+1),phase:SEED_PHASES[r[0]],seq:r[1],name:r[2],
+    minEach:r[3],minTotal:r[4],qty:r[5],type:r[6]}));
+  // Build plan: 42 SlipLifts (3/wk Aug tapering to 2/wk), 75 heavy trays (~10/wk through wk of 9/21).
+  // Weekly split is an assumption seeded from the forecast summary — edit in the Build Plan tab.
+  const sl=[3,3,3,3,3,3,3,3, 2,2,2,2,2,2,2,2,2, 0,0,0,0,0];           // = 42
+  const ht=[10,10,10,10,10,10,10,5, 0,0,0,0,0,0,0,0,0,0,0,0,0,0];      // = 75
+  const plan=[]; for(let w=0;w<22;w++) plan.push({slipLifts:sl[w]||0,heavyTrays:ht[w]||0,lightTrays:0});
+  return {
+    version:1,
+    assumptions:{
+      horizonStart:'2026-08-03', weeks:22,
+      techs:10, hoursPerDay:8, utilization:0.85, efficiency:0.80, ptoDays:5,
+      stations:3, benchSeats:4, trayHours:10, requireBenchBeforeMain:true, leadWeeks:2,
+      holidays:['2026-09-07','2026-11-26','2026-11-27','2026-12-24','2026-12-25','2026-12-31'],
+    },
+    buildPlan:plan,
+    operations:ops,
+    recurring:[
+      {name:'Field parts collection / build',hrsPerWeek:20},
+      {name:'Part quality rework',hrsPerWeek:20},
+      {name:'ECO-driven rework / retrofits',hrsPerWeek:10},
+      {name:'Assembly-driven QC rework',hrsPerWeek:10},
+    ],
+    chunks:[
+      {name:'MeLi bin assembly',hours:400,startWeek:1,endWeek:22},
+      {name:'Battery refurbishment',hours:150,startWeek:1,endWeek:22},
+      {name:'Robot scrap (gen 2.x)',hours:150,startWeek:1,endWeek:22},
+      {name:'Slip Mini',hours:400,startWeek:1,endWeek:22},
+      {name:'Deployment accessories',hours:40,startWeek:1,endWeek:22},
+    ],
+    // Forecast gap flagged in the headcount file: build plan is short 26 trays vs. commitments
+    // (heavy −12 by wk of Oct 26, light −14 by wk of Dec 7). One click adds them in the Build Plan tab.
+    trayGap:{heavy:12,heavyByWeek:13,light:14,lightByWeek:19,applied:false},
+  };
+}
+
+/* ============================== ENGINE ============================== */
+function parseISO(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function fmtISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtMD(d){return (d.getMonth()+1)+'/'+d.getDate();}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+
+// Work calendar in "effective minutes": each working day contributes
+// hoursPerDay*60 * utilization * ptoFactor productive minutes per tech.
+function buildCalendar(a){
+  const start=parseISO(a.horizonStart);
+  const hol=new Set(a.holidays);
+  const horizonDays=a.weeks*7;
+  const leadDays=Math.max(0,Math.round(a.leadWeeks||0))*7;   // WIP head start before week 1
+  const calStart=addDays(start,-leadDays);
+  const days=[];                      // working days, extended 3x horizon so late schedules resolve
+  for(let i=0;i<leadDays+horizonDays*3;i++){
+    const d=addDays(calStart,i);
+    const dow=d.getDay();
+    if(dow===0||dow===6) continue;
+    if(hol.has(fmtISO(d))) continue;
+    days.push(d);
+  }
+  const workdaysInHorizon=days.filter(d=>d>=start&&(d-start)/864e5<horizonDays).length;
+  const workdayHours=workdaysInHorizon*a.hoursPerDay;
+  const ptoFactor=Math.max(0.01,1-(a.ptoDays*a.hoursPerDay)/Math.max(1,workdayHours));
+  const dayEff=a.hoursPerDay*60*a.utilization*ptoFactor;   // effective minutes per tech-day
+  const weeks=[];
+  for(let w=0;w<a.weeks;w++){
+    const ws=addDays(start,w*7);
+    weeks.push({idx:w,start:ws,end:addDays(ws,6),label:fmtMD(ws),
+      workdays:days.filter(d=>d>=ws&&d<addDays(ws,7)).length});
+  }
+  function effToDate(eff){            // effective-minute offset -> real Date
+    let di=Math.floor(eff/dayEff);
+    if(di>=days.length)di=days.length-1;
+    return days[di];
+  }
+  function dateToWeek(d){
+    const w=Math.floor((d-start)/(7*864e5));
+    return w;                          // may exceed weeks-1 (overflow past horizon)
+  }
+  function weekStartEff(w){            // effective minutes elapsed before week w begins
+    const ws=addDays(start,w*7);
+    return days.filter(d=>d<ws).length*dayEff;
+  }
+  function weekEndEff(w){
+    const we=addDays(start,w*7+7);
+    return days.filter(d=>d<we).length*dayEff;
+  }
+  const leadWorkdays=days.filter(d=>d<start).length;
+  return {start,days,dayEff,ptoFactor,weeks,workdaysInHorizon,leadWorkdays,effToDate,dateToWeek,weekStartEff,weekEndEff,
+    horizonEndEff:weekEndEff(a.weeks-1)};
+}
+
+// Expand state into a task list for the finite-capacity scheduler.
+function buildTasks(st,cal){
+  const a=st.assumptions;
+  const tasks=[];
+  const mainOps=st.operations.filter(o=>o.type==='M').slice().sort((x,y)=>x.seq-y.seq);
+  const benchOps=st.operations.filter(o=>o.type==='B');
+  let unitNo=0;
+  st.buildPlan.forEach((wk,w)=>{
+    for(let k=0;k<(wk.slipLifts||0);k++){
+      unitNo++;
+      const unit='SL-'+String(unitNo).padStart(2,'0');
+      const due=cal.weekEndEff(w);
+      const benchIds=[];
+      benchOps.forEach(o=>{
+        const id=unit+':'+o.id;
+        benchIds.push(id);
+        tasks.push({id,unit,unitNo,dueWeek:w,label:o.name,cat:'bench',
+          dur:o.minTotal/Math.max(0.05,a.efficiency),release:0,due,preds:[],needsBench:true});
+      });
+      let prev=null;
+      mainOps.forEach(o=>{
+        const id=unit+':'+o.id;
+        const preds=prev?[prev]:(a.requireBenchBeforeMain?benchIds.slice():[]);
+        tasks.push({id,unit,unitNo,dueWeek:w,label:o.name,cat:'main',
+          dur:o.minTotal/Math.max(0.05,a.efficiency),release:0,due,preds,needsStation:true});
+        prev=id;
+      });
+    }
+    const trays=(wk.heavyTrays||0)+(wk.lightTrays||0);
+    for(let t=0;t<trays;t++){
+      tasks.push({id:'TR-w'+(w+1)+'-'+(t+1),unit:null,dueWeek:w,label:'Tray build (wk of '+cal.weeks[w].label+')',
+        cat:'tray',dur:a.trayHours*60,release:0,due:cal.weekEndEff(w),preds:[]});
+    }
+  });
+  st.recurring.forEach((r,ri)=>{
+    if(!(r.hrsPerWeek>0))return;
+    cal.weeks.forEach((wk,w)=>{
+      if(wk.workdays===0)return;
+      tasks.push({id:'RC-'+ri+'-w'+(w+1),unit:null,dueWeek:w,label:r.name,cat:'support',
+        dur:r.hrsPerWeek*60,release:cal.weekStartEff(w),due:cal.weekEndEff(w),preds:[]});
+    });
+  });
+  st.chunks.forEach((c,ci)=>{
+    if(!(c.hours>0))return;
+    const w1=Math.max(1,c.startWeek||1)-1, w2=Math.min(st.assumptions.weeks,c.endWeek||st.assumptions.weeks)-1;
+    const slices=Math.max(1,Math.ceil(c.hours/20));
+    const per=c.hours/slices;
+    for(let s=0;s<slices;s++){
+      tasks.push({id:'CH-'+ci+'-'+(s+1),unit:null,dueWeek:w2,label:c.name,cat:'support',
+        dur:per*60,release:cal.weekStartEff(w1),due:cal.weekEndEff(w2),preds:[]});
+    }
+  });
+  return tasks;
+}
+
+// Priority-list scheduler: earliest-due-date, main-line first on ties.
+// Resources: tech pool, main-line stations, bench seats. All durations in effective minutes.
+function runSchedule(st){
+  const a=st.assumptions;
+  const cal=buildCalendar(a);
+  const tasks=buildTasks(st,cal);
+  const byId=new Map(tasks.map(t=>[t.id,t]));
+  const remainingPreds=new Map(tasks.map(t=>[t.id,t.preds.length]));
+  const succ=new Map();
+  tasks.forEach(t=>t.preds.forEach(p=>{
+    if(!succ.has(p))succ.set(p,[]);
+    succ.get(p).push(t.id);
+  }));
+  const prio=t=>[t.due,t.needsStation?0:1,t.unitNo||1e9,t.id];
+  const cmp=(x,y)=>{const px=prio(x),py=prio(y);
+    for(let i=0;i<px.length;i++){if(px[i]<py[i])return -1;if(px[i]>py[i])return 1;}return 0;};
+  let ready=tasks.filter(t=>t.preds.length===0&&t.release<=0).sort(cmp);
+  let notReleased=tasks.filter(t=>t.preds.length===0&&t.release>0).sort((x,y)=>x.release-y.release);
+  const running=[];                    // {end, task}
+  let freeTech=a.techs, freeStation=Math.max(1,a.stations), freeBench=Math.max(1,a.benchSeats);
+  let t=0, done=0;
+  const HARD_STOP=cal.days.length*cal.dayEff;
+  while(done<tasks.length){
+    // release newly available tasks
+    while(notReleased.length&&notReleased[0].release<=t){
+      const nt=notReleased.shift();
+      ready.splice(sortedPos(ready,nt,cmp),0,nt);
+    }
+    // start everything startable at time t
+    let started=true;
+    while(started&&freeTech>0){
+      started=false;
+      for(let i=0;i<ready.length;i++){
+        const task=ready[i];
+        if(task.needsStation&&freeStation<1)continue;
+        if(task.needsBench&&freeBench<1)continue;
+        ready.splice(i,1);
+        freeTech--; if(task.needsStation)freeStation--; if(task.needsBench)freeBench--;
+        task.start=t; task.end=t+task.dur;
+        running.push(task);
+        started=true;
+        break;
+      }
+      if(freeTech===0)break;
+    }
+    if(running.length===0){
+      if(notReleased.length){t=notReleased[0].release;continue;}
+      break;                           // deadlock guard (shouldn't happen)
+    }
+    // advance to earliest completion
+    let minEnd=Infinity;
+    running.forEach(r=>{if(r.end<minEnd)minEnd=r.end;});
+    const nextRelease=notReleased.length?notReleased[0].release:Infinity;
+    t=Math.min(minEnd,nextRelease>t?nextRelease:Infinity);
+    if(t===Infinity||t>HARD_STOP)break;
+    for(let i=running.length-1;i>=0;i--){
+      const r=running[i];
+      if(r.end<=t){
+        running.splice(i,1);
+        freeTech++; if(r.needsStation)freeStation++; if(r.needsBench)freeBench++;
+        done++;
+        (succ.get(r.id)||[]).forEach(sid=>{
+          const n=remainingPreds.get(sid)-1;
+          remainingPreds.set(sid,n);
+          if(n===0){
+            const s=byId.get(sid);
+            if(s.release<=t)ready.splice(sortedPos(ready,s,cmp),0,s);
+            else notReleased.splice(sortedPosBy(notReleased,s,x=>x.release),0,s);
+          }
+        });
+      }
+    }
+  }
+  // ---- results ----
+  const units=[];
+  const unitMap=new Map();
+  tasks.filter(x=>x.unit).forEach(x=>{
+    if(!unitMap.has(x.unit))unitMap.set(x.unit,{unit:x.unit,unitNo:x.unitNo,dueWeek:x.dueWeek,
+      benchStart:Infinity,benchEnd:0,mainStart:Infinity,finish:0,scheduled:false});
+    const u=unitMap.get(x.unit);
+    if(x.start==null)return;
+    u.scheduled=true;
+    if(x.cat==='bench'){u.benchStart=Math.min(u.benchStart,x.start);u.benchEnd=Math.max(u.benchEnd,x.end);}
+    else{u.mainStart=Math.min(u.mainStart,x.start);u.finish=Math.max(u.finish,x.end);}
+  });
+  unitMap.forEach(u=>{
+    u.due=cal.weekEndEff(u.dueWeek);
+    u.late=u.finish>u.due+1e-6;
+    u.finishDate=u.finish?cal.effToDate(u.finish-1e-6):null;
+    u.dueDate=addDays(cal.weeks[u.dueWeek].start,4); // Friday of plan week
+    u.benchStartDate=isFinite(u.benchStart)?cal.effToDate(u.benchStart):null;
+    u.mainStartDate=isFinite(u.mainStart)?cal.effToDate(u.mainStart):null;
+    u.lateDays=u.late&&u.finishDate?Math.max(1,Math.round((u.finishDate-u.dueDate)/864e5)):0;
+    units.push(u);
+  });
+  units.sort((x,y)=>x.unitNo-y.unitNo);
+  // weekly scheduled hours by category (split tasks across weeks by effective time)
+  const nW=a.weeks+8;
+  const weekly={build:new Array(nW).fill(0),tray:new Array(nW).fill(0),support:new Array(nW).fill(0)};
+  const weekEffBounds=[];for(let w=0;w<=nW;w++)weekEffBounds.push(cal.weekEndEff(w-1));
+  function addSpan(arr,s,e){
+    for(let w=0;w<nW;w++){
+      const ws=weekEffBounds[w],we=weekEffBounds[w+1];
+      const ov=Math.min(e,we)-Math.max(s,ws);
+      if(ov>0)arr[w]+=ov/60;
+      if(we>=e)break;
+    }
+  }
+  tasks.forEach(x=>{
+    if(x.start==null)return;
+    const arr=x.cat==='tray'?weekly.tray:(x.cat==='support'?weekly.support:weekly.build);
+    addSpan(arr,x.start,x.end);
+  });
+  // capacity per week (effective hours)
+  const capacity=cal.weeks.map(w=>a.techs*w.workdays*a.hoursPerDay*a.utilization*cal.ptoFactor);
+  for(let w=a.weeks;w<nW;w++)capacity.push(a.techs*5*a.hoursPerDay*a.utilization*cal.ptoFactor);
+  // tops-down totals
+  const perUnitMin=st.operations.reduce((s,o)=>s+(o.minTotal||0),0);
+  const perUnitHrs=perUnitMin/60/Math.max(0.05,a.efficiency);
+  const totUnits=st.buildPlan.reduce((s,w)=>s+(w.slipLifts||0),0);
+  const totTrays=st.buildPlan.reduce((s,w)=>s+(w.heavyTrays||0)+(w.lightTrays||0),0);
+  const recHrs=st.recurring.reduce((s,r)=>s+(r.hrsPerWeek||0),0)*a.weeks;
+  const chunkHrs=st.chunks.reduce((s,c)=>s+(c.hours||0),0);
+  const demandHrs=totUnits*perUnitHrs+totTrays*a.trayHours+recHrs+chunkHrs;
+  const effHoursPerHead=cal.workdaysInHorizon*a.hoursPerDay*cal.ptoFactor*a.utilization;
+  const capacityHrs=effHoursPerHead*a.techs;
+  const headsRaw=demandHrs/Math.max(1,effHoursPerHead);
+  const sensitivity=[0.75,0.80,0.85,0.90].map(u=>{
+    const eff=cal.workdaysInHorizon*a.hoursPerDay*cal.ptoFactor*u;
+    return {util:u,heads:Math.ceil(demandHrs/eff)};
+  });
+  const lastUnit=units.filter(u=>u.finishDate).reduce((m,u)=>!m||u.finishDate>m.finishDate?u:m,null);
+  // main-line throughput: serial line minutes per robot vs station-weeks available
+  const mainEffMin=st.operations.filter(o=>o.type==='M').reduce((s,o)=>s+o.minTotal,0)/Math.max(0.05,a.efficiency);
+  const stationWkEff=5*cal.dayEff;                            // eff minutes per station-week
+  const lineRate=mainEffMin>0?a.stations*stationWkEff/mainEffMin:Infinity; // robots/week max
+  const benchEffMin=st.operations.filter(o=>o.type==='B').reduce((s,o)=>s+o.minTotal,0)/Math.max(0.05,a.efficiency);
+  const benchRate=benchEffMin>0?a.benchSeats*stationWkEff/benchEffMin:Infinity;
+  const peakRate=Math.max(0,...st.buildPlan.map(w=>w.slipLifts||0));
+  const busyMin=tasks.reduce((s,x)=>x.start!=null?s+x.dur:s,0);
+  const horizonTechMin=a.techs*(cal.workdaysInHorizon+cal.leadWorkdays)*cal.dayEff;
+  return {cal,tasks,units,weekly,capacity,
+    kpi:{perUnitHrs,totUnits,totTrays,demandHrs,capacityHrs,effHoursPerHead,headsRaw,
+      headsRounded:Math.ceil(headsRaw),sensitivity,lastUnit,lineRate,benchRate,peakRate,
+      lateUnits:units.filter(u=>u.late).length,
+      onTime:units.filter(u=>!u.late&&u.scheduled).length,
+      utilizationOfPool:Math.min(1,busyMin/Math.max(1,horizonTechMin))}};
+}
+function sortedPos(arr,item,cmp){let lo=0,hi=arr.length;while(lo<hi){const m=(lo+hi)>>1;if(cmp(arr[m],item)<=0)lo=m+1;else hi=m;}return lo;}
+function sortedPosBy(arr,item,key){let lo=0,hi=arr.length;while(lo<hi){const m=(lo+hi)>>1;if(key(arr[m])<=key(item))lo=m+1;else hi=m;}return lo;}
+
+/* ============================== STATE ============================== */
+const LS_KEY='slip-production-scheduler-v1';
+let state=loadState();
+let result=null;
+let activeTab='dashboard';
+function loadState(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(raw){
+      const s=JSON.parse(raw);
+      if(s&&s.version===1){
+        s.assumptions=Object.assign(seedState().assumptions,s.assumptions);
+        return s;
+      }
+    }
+  }catch(e){}
+  return seedState();
+}
+function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+function recompute(){result=runSchedule(state);}
+function commit(){saveState();recompute();render();}
+
+/* ============================== UI HELPERS ============================== */
+const $=s=>document.querySelector(s);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function hrs(x,d=0){return x.toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:0});}
+const tooltip=$('#tooltip')?null:null; // placeholder; bound after DOM below
+function showTip(evt,html){
+  const el=$('#tooltip');
+  el.innerHTML=html;el.style.display='block';
+  const pad=14;let x=evt.clientX+pad,y=evt.clientY+pad;
+  const r=el.getBoundingClientRect();
+  if(x+r.width>window.innerWidth-8)x=evt.clientX-r.width-pad;
+  if(y+r.height>window.innerHeight-8)y=evt.clientY-r.height-pad;
+  el.style.left=x+'px';el.style.top=y+'px';
+}
+function hideTip(){$('#tooltip').style.display='none';}
+
+/* ============================== CHARTS (inline SVG) ============================== */
+// Weekly load vs capacity: stacked columns (3 series) + capacity step line.
+function chartLoad(res,st){
+  const a=st.assumptions;
+  const nW=a.weeks;
+  const W=Math.max(720,nW*46),H=300,mL=52,mR=12,mT=18,mB=40;
+  const iw=W-mL-mR,ih=H-mT-mB;
+  const totals=[];let maxV=0;
+  for(let w=0;w<nW;w++){
+    const t=res.weekly.build[w]+res.weekly.tray[w]+res.weekly.support[w];
+    totals.push(t);maxV=Math.max(maxV,t,res.capacity[w]);
+  }
+  maxV=Math.ceil(maxV/50)*50||50;
+  const x=w=>mL+iw*(w+0.5)/nW, bw=Math.min(26,iw/nW*0.62);
+  const y=v=>mT+ih*(1-v/maxV);
+  let g='';
+  // gridlines + y labels
+  for(let v=0;v<=maxV;v+=maxV/5){
+    g+=`<line x1="${mL}" y1="${y(v)}" x2="${W-mR}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
+    g+=`<text x="${mL-7}" y="${y(v)+4}" text-anchor="end">${hrs(v)}</text>`;
+  }
+  // bars: stacked with 2px surface gaps
+  const cats=[['build','var(--s1)','SlipLift builds'],['tray','var(--s2)','Trays'],['support','var(--s3)','Support load']];
+  for(let w=0;w<nW;w++){
+    let acc=0;
+    cats.forEach(([k,c])=>{
+      const v=res.weekly[k][w];if(v<=0.01){return;}
+      const y1=y(acc+v),y2=y(acc);
+      const hpx=Math.max(1.5,y2-y1);
+      g+=`<rect data-w="${w}" x="${x(w)-bw/2}" y="${y1}" width="${bw}" height="${Math.max(0,hpx-2)}" fill="${c}" rx="2"/>`;
+      acc+=v;
+    });
+    // overload marker
+    if(totals[w]>res.capacity[w]+0.5){
+      g+=`<text x="${x(w)}" y="${y(totals[w])-6}" text-anchor="middle" font-weight="700" fill="var(--crit)">▲</text>`;
+    }
+    // hover target
+    g+=`<rect class="hit" data-w="${w}" x="${x(w)-iw/nW/2}" y="${mT}" width="${iw/nW}" height="${ih}" fill="transparent"/>`;
+    if(w%2===0||nW<=14)g+=`<text x="${x(w)}" y="${H-mB+16}" text-anchor="middle">${res.cal.weeks[w].label}</text>`;
+  }
+  // capacity step line
+  let path='';
+  for(let w=0;w<nW;w++){
+    const x1=mL+iw*w/nW,x2=mL+iw*(w+1)/nW,yy=y(res.capacity[w]);
+    path+=(w?`L${x1},${yy}`:`M${x1},${yy}`)+`L${x2},${yy}`;
+  }
+  g+=`<path d="${path}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 4"/>`;
+  const capLblY=y(res.capacity[0]);
+  g+=`<text x="${mL+4}" y="${capLblY-6}" class="lbl-strong">capacity</text>`;
+  g+=`<line x1="${mL}" y1="${y(0)}" x2="${W-mR}" y2="${y(0)}" stroke="var(--axis)" stroke-width="1"/>`;
+  g+=`<text x="${mL-40}" y="${mT-4}" class="lbl">hrs/wk</text>`;
+  return {svg:`<svg id="chart-load" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Weekly load versus capacity">${g}</svg>`,
+    bind(){
+      const svg=$('#chart-load');if(!svg)return;
+      svg.addEventListener('mousemove',e=>{
+        const t=e.target.closest('[data-w]');if(!t){hideTip();return;}
+        const w=+t.dataset.w;
+        const b=res.weekly.build[w],tr=res.weekly.tray[w],sp=res.weekly.support[w],cap=res.capacity[w];
+        const tot=b+tr+sp;
+        const d=tot-cap;
+        showTip(e,`<div class="t">Week of ${res.cal.weeks[w].label}</div>
+          <div class="row"><span>SlipLift builds</span><b>${hrs(b)} h</b></div>
+          <div class="row"><span>Trays</span><b>${hrs(tr)} h</b></div>
+          <div class="row"><span>Support load</span><b>${hrs(sp)} h</b></div>
+          <div class="row"><span>Total / capacity</span><b>${hrs(tot)} / ${hrs(cap)} h</b></div>
+          <div class="row"><span>${d>0?'Overload':'Headroom'}</span><b>${hrs(Math.abs(d))} h</b></div>`);
+      });
+      svg.addEventListener('mouseleave',hideTip);
+    }};
+}
+// Gantt: one row per SlipLift unit; bench span (aqua) + main span (blue); due tick; late ring.
+function chartGantt(res,st){
+  const units=res.units;
+  if(!units.length)return {svg:'<p class="muted">No SlipLift units in the build plan.</p>',bind(){}};
+  const lead=Math.max(0,Math.round(st.assumptions.leadWeeks||0));
+  const nW=st.assumptions.weeks+4;
+  const span=nW+lead;
+  const rowH=18,W=Math.max(760,span*40),mL=64,mR=12,mT=26,mB=8;
+  const H=mT+mB+units.length*rowH;
+  const iw=W-mL-mR;
+  const x=eff=>{
+    // effective minutes -> week-fraction position (lead weeks shown left of horizon start)
+    let w=-lead;while(w<nW&&res.cal.weekEndEff(w)<eff)w++;
+    const ws=res.cal.weekStartEff(w),we=res.cal.weekEndEff(w);
+    const f=we>ws?(eff-ws)/(we-ws):0;
+    return mL+iw*Math.min(span,(w+lead+Math.max(0,Math.min(1,f))))/span;
+  };
+  let g='';
+  for(let w=-lead;w<=nW;w++){
+    const xx=mL+iw*(w+lead)/span;
+    const isStart=w===0;
+    g+=`<line x1="${xx}" y1="${mT-6}" x2="${xx}" y2="${H-mB}" stroke="${isStart?'var(--axis)':'var(--grid)'}" stroke-width="${isStart?1.6:1}"/>`;
+    if(w>=0&&w<nW&&w<res.cal.weeks.length&&(w%2===0))
+      g+=`<text x="${xx+2}" y="${mT-10}">${res.cal.weeks[w].label}</text>`;
+  }
+  if(lead>0)g+=`<text x="${mL+2}" y="${mT-10}">head start</text>`;
+  units.forEach((u,i)=>{
+    const yy=mT+i*rowH;
+    const yc=yy+rowH/2;
+    g+=`<text x="${mL-8}" y="${yc+4}" text-anchor="end" class="lbl">${esc(u.unit)}</text>`;
+    if(isFinite(u.benchStart)&&u.benchEnd>u.benchStart){
+      g+=`<rect data-u="${i}" x="${x(u.benchStart)}" y="${yc-5}" width="${Math.max(2,x(u.benchEnd)-x(u.benchStart))}" height="4.5" fill="var(--s3)" rx="2"/>`;
+    }
+    if(isFinite(u.mainStart)&&u.finish>u.mainStart){
+      g+=`<rect data-u="${i}" x="${x(u.mainStart)}" y="${yc-0.5}" width="${Math.max(2,x(u.finish)-x(u.mainStart))}" height="6.5" fill="var(--s1)" rx="2"
+          ${u.late?'stroke="var(--crit)" stroke-width="1.6"':''}/>`;
+    }
+    const dx=x(u.due);
+    g+=`<line x1="${dx}" y1="${yc-7}" x2="${dx}" y2="${yc+7}" stroke="${u.late?'var(--crit)':'var(--axis)'}" stroke-width="2"/>`;
+    g+=`<rect class="hit" data-u="${i}" x="${mL}" y="${yy}" width="${iw}" height="${rowH}" fill="transparent"/>`;
+  });
+  return {svg:`<svg id="chart-gantt" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Per-unit schedule Gantt">${g}</svg>`,
+    bind(){
+      const svg=$('#chart-gantt');if(!svg)return;
+      svg.addEventListener('mousemove',e=>{
+        const t=e.target.closest('[data-u]');if(!t){hideTip();return;}
+        const u=res.units[+t.dataset.u];
+        showTip(e,`<div class="t">${esc(u.unit)} — due ${fmtMD(u.dueDate)}</div>
+          <div class="row"><span>Bench starts</span><b>${u.benchStartDate?fmtMD(u.benchStartDate):'—'}</b></div>
+          <div class="row"><span>Line starts</span><b>${u.mainStartDate?fmtMD(u.mainStartDate):'—'}</b></div>
+          <div class="row"><span>Completes</span><b>${u.finishDate?fmtMD(u.finishDate):'—'}</b></div>
+          <div class="row"><span>Status</span><b>${u.late?'LATE +'+u.lateDays+'d':'On time'}</b></div>`);
+      });
+      svg.addEventListener('mouseleave',hideTip);
+    }};
+}
+
+/* ============================== VIEWS ============================== */
+const TABS=[['dashboard','Dashboard'],['schedule','Schedule'],['plan','Build Plan'],
+  ['ops','Operations'],['assumptions','Assumptions'],['help','Help']];
+
+function render(){
+  $('#tabs').innerHTML=TABS.map(([id,l])=>
+    `<button data-tab="${id}" class="${id===activeTab?'active':''}">${l}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{activeTab=b.dataset.tab;render();});
+  const a=state.assumptions;
+  $('#hdr-sub').textContent=`SLIP Robotics · ${a.weeks} weeks from ${fmtMD(parseISO(a.horizonStart))} · ${a.techs} techs · finite-capacity schedule`;
+  const v={dashboard:viewDashboard,schedule:viewSchedule,plan:viewPlan,ops:viewOps,assumptions:viewAssumptions,help:viewHelp}[activeTab];
+  const out=v();
+  $('#main').innerHTML=out.html;
+  (out.bind||(()=>{}))();
+}
+
+function alertsHtml(){
+  const k=result.kpi,a=state.assumptions;
+  const items=[];
+  if(k.demandHrs>k.capacityHrs){
+    items.push(['crit','Capacity',`Demand ${hrs(k.demandHrs)} h exceeds capacity ${hrs(k.capacityHrs)} h — short ${hrs(k.demandHrs-k.capacityHrs)} h (~${(k.headsRaw-a.techs).toFixed(1)} heads). Add techs, OT, or move demand.`]);
+  }else{
+    items.push(['good','Capacity',`Demand ${hrs(k.demandHrs)} h fits capacity ${hrs(k.capacityHrs)} h (headroom ${hrs(k.capacityHrs-k.demandHrs)} h).`]);
+  }
+  if(isFinite(k.lineRate)&&k.peakRate>0&&k.lineRate<k.peakRate-0.01){
+    items.push(['crit','Line rate',`Main line maxes out at ${k.lineRate.toFixed(1)} robots/wk (${a.stations} station${a.stations>1?'s':''} × ${(k.lineRate/a.stations).toFixed(2)} robots/station-wk, serial install+test) but the plan peaks at ${k.peakRate}/wk. Add a station, split the line into more stations, or parallelize main-line ops.`]);
+  }
+  if(isFinite(k.benchRate)&&k.peakRate>0&&k.benchRate<k.peakRate-0.01){
+    items.push(['crit','Bench rate',`Bench subassembly maxes out at ${k.benchRate.toFixed(1)} robot-sets/wk (${a.benchSeats} seat${a.benchSeats>1?'s':''}) but the plan peaks at ${k.peakRate} robots/wk. Add bench seats (people working subassembly in parallel) or pre-build ahead of the ramp.`]);
+  }
+  if(k.lateUnits>0)items.push(['crit','Schedule',`${k.lateUnits} of ${k.totUnits} SlipLifts finish after their plan week. See Schedule tab.`]);
+  else if(k.totUnits>0)items.push(['good','Schedule',`All ${k.totUnits} SlipLifts complete within their plan weeks.`]);
+  if(state.trayGap&&!state.trayGap.applied&&(state.trayGap.heavy+state.trayGap.light)>0){
+    items.push(['warn','Forecast gap',`Build plan is short ${state.trayGap.heavy+state.trayGap.light} trays vs. demand commitments (heavy −${state.trayGap.heavy} by wk ${state.trayGap.heavyByWeek}, light −${state.trayGap.light} by wk ${state.trayGap.lightByWeek}). Add them in the Build Plan tab.`]);
+  }
+  return `<div class="alerts">${items.map(([c,t,m])=>
+    `<div class="alert ${c}"><span class="tag">${t}</span><span>${m}</span></div>`).join('')}</div>`;
+}
+
+function viewDashboard(){
+  const k=result.kpi,a=state.assumptions;
+  const load=chartLoad(result,state);
+  const capDelta=k.capacityHrs-k.demandHrs;
+  const kpis=`
+  <div class="kpis">
+    <div class="kpi"><div class="label">Headcount required</div>
+      <div class="value">${k.headsRounded}<small> heads</small></div>
+      <div class="note">raw ${k.headsRaw.toFixed(2)} · you have ${a.techs} <span class="${a.techs>=k.headsRounded?'up':'down'}">${a.techs>=k.headsRounded?'✓ covered':'▲ short '+(k.headsRounded-a.techs)}</span></div></div>
+    <div class="kpi"><div class="label">Demand vs capacity</div>
+      <div class="value">${hrs(k.demandHrs/1000,1)}k<small> / ${hrs(k.capacityHrs/1000,1)}k h</small></div>
+      <div class="note"><span class="${capDelta>=0?'up':'down'}">${capDelta>=0?'headroom':'short'} ${hrs(Math.abs(capDelta))} h</span></div></div>
+    <div class="kpi"><div class="label">SlipLifts on time</div>
+      <div class="value">${k.onTime}<small> / ${k.totUnits}</small></div>
+      <div class="note">${k.lateUnits?`<span class="down">${k.lateUnits} late</span>`:'<span class="up">no late units</span>'}</div></div>
+    <div class="kpi"><div class="label">Last SlipLift completes</div>
+      <div class="value">${k.lastUnit&&k.lastUnit.finishDate?fmtMD(k.lastUnit.finishDate):'—'}</div>
+      <div class="note">${k.lastUnit?esc(k.lastUnit.unit)+(k.lastUnit.late?' · <span class="down">late</span>':''):''}</div></div>
+    <div class="kpi"><div class="label">Hours per SlipLift</div>
+      <div class="value">${k.perUnitHrs.toFixed(1)}<small> h</small></div>
+      <div class="note">MBOM touch ÷ ${Math.round(a.efficiency*100)}% efficiency</div></div>
+    <div class="kpi"><div class="label">Tech pool utilization</div>
+      <div class="value">${Math.round(k.utilizationOfPool*100)}<small>%</small></div>
+      <div class="note">of effective hours in horizon</div></div>
+  </div>`;
+  const sens=`
+  <div class="card"><h2>Sensitivity — headcount vs. direct-labor utilization</h2>
+  <p class="sub">Total demand ${hrs(k.demandHrs)} h over ${a.weeks} weeks; holidays and PTO as configured.</p>
+  <div class="tablewrap"><table class="data"><tr><th>Utilization</th>${k.sensitivity.map(s=>`<th class="num">${Math.round(s.util*100)}%</th>`).join('')}</tr>
+  <tr><td>Heads required</td>${k.sensitivity.map(s=>`<td class="num">${s.heads}${s.util===a.utilization?' ◀':''}</td>`).join('')}</tr></table></div></div>`;
+  return {html:alertsHtml()+kpis+`
+    <div class="card">
+      <h2>Weekly load vs. capacity</h2>
+      <p class="sub">Effective hours (utilization ${Math.round(a.utilization*100)}%, PTO spread, holidays out). Dashed line = ${a.techs}-tech capacity; ▲ = overloaded week.</p>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--s1)"></span>SlipLift builds</span>
+        <span><span class="sw" style="background:var(--s2)"></span>Trays</span>
+        <span><span class="sw" style="background:var(--s3)"></span>Support load (recurring + work chunks)</span>
+      </div>
+      <div class="svgwrap">${load.svg}</div>
+    </div>`+sens,
+    bind(){load.bind();}};
+}
+
+function viewSchedule(){
+  const gantt=chartGantt(result,state);
+  const rows=result.units.map(u=>`<tr>
+    <td>${esc(u.unit)}</td>
+    <td>wk of ${result.cal.weeks[u.dueWeek]?result.cal.weeks[u.dueWeek].label:'?'}</td>
+    <td>${u.benchStartDate?fmtMD(u.benchStartDate):'—'}</td>
+    <td>${u.mainStartDate?fmtMD(u.mainStartDate):'—'}</td>
+    <td>${u.finishDate?fmtMD(u.finishDate):'—'}</td>
+    <td>${u.late?`<span class="chip late">late +${u.lateDays}d</span>`:'<span class="chip ok">on time</span>'}</td>
+  </tr>`).join('');
+  return {html:alertsHtml()+`
+    <div class="card">
+      <h2>Per-unit schedule</h2>
+      <p class="sub">Bench subassembly work (thin bar) feeds line install &amp; test (thick bar). Tick = committed plan week end. Red ring/tick = late. Hover any row for dates.</p>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--s3)"></span>Bench / subassembly</span>
+        <span><span class="sw" style="background:var(--s1)"></span>Main line</span>
+        <span><span class="sw" style="background:var(--crit)"></span>Late</span>
+      </div>
+      <div class="svgwrap">${gantt.svg}</div>
+    </div>
+    <div class="card">
+      <h2>Dispatch list</h2>
+      <p class="sub">Export this as CSV (header button) to load work orders into the MES.</p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>Unit</th><th>Committed week</th><th>Bench start</th><th>Line start</th><th>Completes</th><th>Status</th></tr>
+        ${rows||'<tr><td colspan="6" class="muted">No units planned.</td></tr>'}
+      </table></div>
+    </div>`,
+    bind(){gantt.bind();}};
+}
+
+function viewPlan(){
+  const a=state.assumptions;
+  const perUnit=result.kpi.perUnitHrs;
+  const rows=state.buildPlan.map((w,i)=>{
+    const wk=result.cal.weeks[i];
+    const load=result.weekly.build[i]+result.weekly.tray[i]+result.weekly.support[i];
+    const cap=result.capacity[i];
+    const d=cap-load;
+    const chip=d<-0.5?`<span class="chip late">over ${hrs(-d)} h</span>`:(d<cap*0.08?`<span class="chip tight">tight</span>`:`<span class="chip ok">ok</span>`);
+    return `<tr>
+      <td>wk ${i+1} · ${wk?wk.label:''}</td>
+      <td class="num"><input type="number" min="0" data-plan="${i}:slipLifts" value="${w.slipLifts||0}"></td>
+      <td class="num"><input type="number" min="0" data-plan="${i}:heavyTrays" value="${w.heavyTrays||0}"></td>
+      <td class="num"><input type="number" min="0" data-plan="${i}:lightTrays" value="${w.lightTrays||0}"></td>
+      <td class="num">${hrs(load)}</td><td class="num">${hrs(cap)}</td><td>${chip}</td></tr>`;
+  }).join('');
+  const tot=state.buildPlan.reduce((s,w)=>({sl:s.sl+(w.slipLifts||0),h:s.h+(w.heavyTrays||0),l:s.l+(w.lightTrays||0)}),{sl:0,h:0,l:0});
+  const gapBtn=state.trayGap&&!state.trayGap.applied&&(state.trayGap.heavy+state.trayGap.light)>0?
+    `<button id="btn-gap" class="primary small">Add ${state.trayGap.heavy+state.trayGap.light} unplanned gap trays to plan</button>`:'';
+  return {html:alertsHtml()+`
+    <div class="card">
+      <h2>Weekly build plan</h2>
+      <p class="sub">Seeded from the demand forecast summary (42 SlipLifts, 75 heavy trays) — edit quantities; the schedule recomputes as you type. Each SlipLift ≈ ${perUnit.toFixed(1)} h, each tray ${a.trayHours} h. ${gapBtn}</p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>Week</th><th class="num">SlipLifts</th><th class="num">Heavy trays</th><th class="num">Light trays</th>
+            <th class="num">Scheduled load (h)</th><th class="num">Capacity (h)</th><th>Fit</th></tr>
+        ${rows}
+        <tr><th>Total</th><th class="num">${tot.sl}</th><th class="num">${tot.h}</th><th class="num">${tot.l}</th><th></th><th></th><th></th></tr>
+      </table></div>
+    </div>`,
+    bind(){
+      document.querySelectorAll('[data-plan]').forEach(inp=>{
+        inp.addEventListener('change',()=>{
+          const [i,f]=inp.dataset.plan.split(':');
+          state.buildPlan[+i][f]=Math.max(0,Math.round(+inp.value||0));
+          commit();
+        });
+      });
+      const gb=$('#btn-gap');
+      if(gb)gb.onclick=()=>{
+        const g=state.trayGap;
+        // spread heavy gap over the 4 weeks ending at its commit week, light likewise
+        for(let n=0;n<g.heavy;n++){const w=Math.max(0,g.heavyByWeek-1-(n%4));state.buildPlan[w].heavyTrays++;}
+        for(let n=0;n<g.light;n++){const w=Math.max(0,g.lightByWeek-1-(n%4));state.buildPlan[w].lightTrays++;}
+        g.applied=true;
+        commit();
+      };
+    }};
+}
+
+function viewOps(){
+  const a=state.assumptions;
+  const phases=[...new Set(state.operations.map(o=>o.phase))];
+  const totalMin=state.operations.reduce((s,o)=>s+(o.minTotal||0),0);
+  const mainMin=state.operations.filter(o=>o.type==='M').reduce((s,o)=>s+o.minTotal,0);
+  const rows=state.operations.map((o,i)=>`<tr>
+    <td><select data-op="${i}:phase">${phases.map(p=>`<option ${p===o.phase?'selected':''}>${esc(p)}</option>`).join('')}</select></td>
+    <td class="num"><input type="number" min="0" style="width:56px" data-op="${i}:seq" value="${o.seq}"></td>
+    <td>${esc(o.name)}</td>
+    <td class="num"><input type="number" min="0" data-op="${i}:minTotal" value="${o.minTotal}"></td>
+    <td><select data-op="${i}:type"><option value="M" ${o.type==='M'?'selected':''}>Main</option><option value="B" ${o.type==='B'?'selected':''}>Bench</option></select></td>
+    <td><button class="small" data-del="${i}">✕</button></td></tr>`).join('');
+  return {html:`
+    <div class="card">
+      <h2>MBOM operations — ${state.operations.length} ops</h2>
+      <p class="sub">Source: <code>mbom_tree_260805_1436_ET_edited.xlsx › operations_all</code>. Durations are touch minutes per robot (before the ${Math.round(a.efficiency*100)}% efficiency factor).
+      Totals: main line ${(mainMin/60).toFixed(1)} h · bench ${((totalMin-mainMin)/60).toFixed(1)} h · with efficiency ${(totalMin/60/a.efficiency).toFixed(1)} h/robot.
+      Main-line ops run in <b>Seq</b> order, one at a time per robot; bench ops run in parallel across bench seats.</p>
+      <p class="sub"><button id="btn-add-op" class="small">+ Add operation</button></p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>Phase</th><th class="num">Seq</th><th>Operation</th><th class="num">Min/robot</th><th>Type</th><th></th></tr>
+        ${rows}
+      </table></div>
+    </div>`,
+    bind(){
+      document.querySelectorAll('[data-op]').forEach(inp=>{
+        inp.addEventListener('change',()=>{
+          const [i,f]=inp.dataset.op.split(':');
+          const o=state.operations[+i];
+          if(f==='minTotal'||f==='seq')o[f]=Math.max(0,+inp.value||0);
+          else o[f]=inp.value;
+          commit();
+        });
+      });
+      document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+        state.operations.splice(+b.dataset.del,1);commit();
+      });
+      $('#btn-add-op').onclick=()=>{
+        const maxSeq=Math.max(0,...state.operations.filter(o=>o.type==='M').map(o=>o.seq));
+        state.operations.push({id:'op'+Date.now(),phase:state.operations[0]?.phase||'Lineside Install',
+          seq:maxSeq+1,name:'New operation',minEach:10,minTotal:10,qty:1,type:'M'});
+        commit();
+      };
+    }};
+}
+
+function viewAssumptions(){
+  const a=state.assumptions;
+  const num=(k,v,step,min,max)=>`<label>${v}<input type="number" step="${step}" min="${min}" ${max?`max="${max}"`:''} data-a="${k}" value="${a[k]}"></label>`;
+  const recRows=state.recurring.map((r,i)=>`<tr>
+    <td><input type="text" style="width:100%" data-rec="${i}:name" value="${esc(r.name)}"></td>
+    <td class="num"><input type="number" min="0" data-rec="${i}:hrsPerWeek" value="${r.hrsPerWeek}"></td>
+    <td><button class="small" data-recdel="${i}">✕</button></td></tr>`).join('');
+  const chRows=state.chunks.map((c,i)=>`<tr>
+    <td><input type="text" style="width:100%" data-ch="${i}:name" value="${esc(c.name)}"></td>
+    <td class="num"><input type="number" min="0" data-ch="${i}:hours" value="${c.hours}"></td>
+    <td class="num"><input type="number" min="1" max="${a.weeks}" style="width:56px" data-ch="${i}:startWeek" value="${c.startWeek}"></td>
+    <td class="num"><input type="number" min="1" max="${a.weeks}" style="width:56px" data-ch="${i}:endWeek" value="${c.endWeek}"></td>
+    <td><button class="small" data-chdel="${i}">✕</button></td></tr>`).join('');
+  return {html:`
+    <div class="card"><h2>Workforce &amp; calendar</h2>
+      <p class="sub">Sources: headcount workbook (Jeff, 8/4/2026) and MBOM summary. Every value here is editable; the schedule recomputes immediately.</p>
+      <div class="formgrid">
+        ${num('techs','Direct-labor technicians',1,1)}
+        ${num('hoursPerDay','Hours per day per tech',0.5,1,16)}
+        ${num('utilization','Direct-labor utilization (0–1)',0.01,0.3,1)}
+        ${num('efficiency','Labor efficiency on MBOM times (0–1)',0.01,0.3,1)}
+        ${num('ptoDays','Avg PTO days per head in horizon',1,0)}
+        ${num('stations','Main-line stations (robots in parallel)',1,1,12)}
+        ${num('benchSeats','Bench seats (parallel bench workers)',1,1,20)}
+        ${num('trayHours','Man-hours per tray',0.5,0)}
+        ${num('weeks','Weeks in horizon',1,4,52)}
+        ${num('leadWeeks','WIP lead time (weeks of head start before wk 1)',1,0,8)}
+        <label>Horizon start (Monday)<input type="date" data-a="horizonStart" value="${a.horizonStart}"></label>
+        <label>Bench must finish before line start
+          <input type="checkbox" data-a="requireBenchBeforeMain" ${a.requireBenchBeforeMain?'checked':''}></label>
+        <label style="grid-column:1/-1">Holidays (comma-separated ISO dates)
+          <input type="text" style="flex:1" data-a="holidays" value="${a.holidays.join(', ')}"></label>
+      </div>
+    </div>
+    <div class="card"><h2>Recurring base load (every week)</h2>
+      <div class="tablewrap"><table class="data"><tr><th>Work stream</th><th class="num">Hrs/week</th><th></th></tr>${recRows}</table></div>
+      <p class="sub"><button id="btn-add-rec" class="small">+ Add stream</button></p>
+    </div>
+    <div class="card"><h2>Discrete work chunks (not in build plan)</h2>
+      <div class="tablewrap"><table class="data"><tr><th>Work chunk</th><th class="num">Man-hours</th><th class="num">From wk</th><th class="num">To wk</th><th></th></tr>${chRows}</table></div>
+      <p class="sub"><button id="btn-add-ch" class="small">+ Add chunk</button></p>
+    </div>`,
+    bind(){
+      document.querySelectorAll('[data-a]').forEach(inp=>{
+        inp.addEventListener('change',()=>{
+          const k=inp.dataset.a;
+          if(k==='requireBenchBeforeMain')a[k]=inp.checked;
+          else if(k==='holidays')a[k]=inp.value.split(',').map(s=>s.trim()).filter(s=>/^\d{4}-\d{2}-\d{2}$/.test(s));
+          else if(k==='horizonStart')a[k]=inp.value||a[k];
+          else a[k]=+inp.value||a[k];
+          if(k==='weeks'){
+            const w=Math.max(4,Math.min(52,Math.round(a.weeks)));a.weeks=w;
+            while(state.buildPlan.length<w)state.buildPlan.push({slipLifts:0,heavyTrays:0,lightTrays:0});
+            state.buildPlan.length=w;
+          }
+          commit();
+        });
+      });
+      const bindTable=(sel,arr,commitFn)=>{
+        document.querySelectorAll(sel).forEach(inp=>{
+          inp.addEventListener('change',()=>{
+            const [i,f]=inp.dataset[commitFn].split(':');
+            const row=arr[+i];
+            row[f]=(f==='name')?inp.value:Math.max(0,+inp.value||0);
+            commit();
+          });
+        });
+      };
+      bindTable('[data-rec]',state.recurring,'rec');
+      bindTable('[data-ch]',state.chunks,'ch');
+      document.querySelectorAll('[data-recdel]').forEach(b=>b.onclick=()=>{state.recurring.splice(+b.dataset.recdel,1);commit();});
+      document.querySelectorAll('[data-chdel]').forEach(b=>b.onclick=()=>{state.chunks.splice(+b.dataset.chdel,1);commit();});
+      $('#btn-add-rec').onclick=()=>{state.recurring.push({name:'New stream',hrsPerWeek:5});commit();};
+      $('#btn-add-ch').onclick=()=>{state.chunks.push({name:'New chunk',hours:40,startWeek:1,endWeek:a.weeks});commit();};
+    }};
+}
+
+function viewHelp(){
+  return {html:`
+  <div class="card help">
+    <h2>How this tool works</h2>
+    <p>This is a finite-capacity production scheduler for SlipLift assembly, seeded from the MBOM
+    (<code>mbom_tree_260805_1436_ET_edited.xlsx</code>, 118 operations) and the tops-down headcount model
+    (<code>BOY_Manufacturing_Headcount_TopsDown.xlsx</code>, 8/4/2026). All data lives in this page —
+    no server, no login — and your edits persist in this browser (localStorage).</p>
+    <h3>Scheduling model</h3>
+    <p>Every SlipLift in the weekly build plan becomes 118 tasks: bench subassembly ops (run in parallel,
+    limited by <b>bench seats</b> and technicians) and main-line ops (run in sequence per robot, limited by
+    <b>stations</b> and technicians). Trays, recurring base load, and discrete work chunks compete for the
+    same technician pool. The scheduler dispatches by earliest due date; MBOM touch times are divided by the
+    labor-efficiency factor, and each workday is shrunk by utilization and pro-rated PTO. Weekends and the
+    listed holidays are skipped.</p>
+    <h3>Reading the dashboard</h3>
+    <p>The stacked chart is scheduled load; the dashed line is capacity. ▲ marks weeks where load exceeds
+    capacity — the scheduler will push that work later, which is what makes units go red in the Schedule tab.
+    The headcount tiles reproduce the tops-down math (effective hours per head = workdays × hours × PTO factor ×
+    utilization) so you can sanity-check against the spreadsheet.</p>
+    <h3>Using it in the MES</h3>
+    <p>Host this single file anywhere the MES can reach (an internal web server, SharePoint page, or the MES's
+    own web-content widget) and embed it via <code>&lt;iframe src=".../index.html"&gt;</code>. Use
+    <b>Export schedule CSV</b> to hand the dispatch list (unit, start, completion, status) to MES work orders,
+    and <b>Export data JSON</b> / <b>Import data JSON</b> to share scenarios between people or machines.</p>
+    <h3>Updating for a new MBOM rev</h3>
+    <p>Edit operations directly in the Operations tab, or regenerate the seed block from a new
+    <code>operations_all</code> export and re-import via JSON. Durations are minutes per robot,
+    before efficiency.</p>
+    <h3>Known assumptions</h3>
+    <p>• Weekly SlipLift/tray split is seeded from the forecast summary (3/wk tapering to 2/wk; trays 10/wk through
+    wk of 9/21) — adjust to the real forecast in the Build Plan tab.<br>
+    • Bench work for a robot must finish before its line install starts (toggle in Assumptions).<br>
+    • WIP lead time gives the line a head start before week 1 (default 2 weeks), modelling subassemblies and robots already in flight on the horizon start date.<br>
+    • Labor is fungible across streams (same caveat as the tops-down workbook).<br>
+    • The 26-tray forecast gap from the headcount file is flagged until you add it to the plan.</p>
+  </div>`,bind(){}};
+}
+
+/* ============================== HEADER ACTIONS ============================== */
+function exportCSV(){
+  const lines=[['unit','committed_week_start','bench_start','line_start','completion','status','late_days'].join(',')];
+  result.units.forEach(u=>{
+    lines.push([u.unit,fmtISO(result.cal.weeks[u.dueWeek].start),
+      u.benchStartDate?fmtISO(u.benchStartDate):'',u.mainStartDate?fmtISO(u.mainStartDate):'',
+      u.finishDate?fmtISO(u.finishDate):'',u.late?'LATE':'ON_TIME',u.lateDays].join(','));
+  });
+  lines.push('');
+  lines.push(['week_start','sliplifts','heavy_trays','light_trays','load_hours','capacity_hours'].join(','));
+  state.buildPlan.forEach((w,i)=>{
+    const load=result.weekly.build[i]+result.weekly.tray[i]+result.weekly.support[i];
+    lines.push([fmtISO(result.cal.weeks[i].start),w.slipLifts||0,w.heavyTrays||0,w.lightTrays||0,
+      load.toFixed(1),result.capacity[i].toFixed(1)].join(','));
+  });
+  download('sliplift_schedule.csv',lines.join('\n'),'text/csv');
+}
+function download(name,content,mime){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type:mime}));
+  a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+document.getElementById('btn-export-csv').onclick=exportCSV;
+document.getElementById('btn-export').onclick=()=>download('sliplift_scheduler_data.json',JSON.stringify(state,null,1),'application/json');
+document.getElementById('btn-import').onclick=()=>document.getElementById('file-import').click();
+document.getElementById('file-import').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  f.text().then(txt=>{
+    try{
+      const s=JSON.parse(txt);
+      if(!s||s.version!==1||!Array.isArray(s.operations)||!Array.isArray(s.buildPlan))throw new Error('Not a scheduler data file.');
+      state=s;commit();
+    }catch(err){alert('Import failed: '+err.message);}
+    e.target.value='';
+  });
+});
+document.getElementById('btn-print').onclick=()=>window.print();
+document.getElementById('btn-reset').onclick=()=>{
+  if(confirm('Replace all edits with the original seed data (MBOM 8/5 + headcount 8/4)?')){
+    state=seedState();commit();
+  }
+};
+
+recompute();
+render();
+</script>
