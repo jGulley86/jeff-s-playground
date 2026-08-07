@@ -37,8 +37,13 @@ external dependencies, so it can be hosted anywhere and embedded directly in the
 | Source | What was taken |
 |---|---|
 | `mbom_tree_260805_1436_ET_edited_1.xlsx` › `operations_all`, `dependencies` | 118 operations, touch minutes per robot, Bench/Main split, sequence, 21 main-line precedence rules |
-| `BOY_Manufacturing_Headcount_TopsDown_v2.xlsx` (forecast rev 8/5/2026) | Horizon (22 wks from 8/3), current 7-tech roster (Gusto 7/15/2026), holidays, PTO, tray hours, recurring load, work chunks, light-tray gap |
-| 8/5 demand forecast rev (via v2 workbook §2/§7) | 42 SlipLifts (3/3/2/2/2 in Aug, then 2/wk through 12/21), 45 heavy trays (all Aug), 60 light trays (10/wk, 9/7–10/12) |
+| `BOY_Manufacturing_Headcount_TopsDown_v2.xlsx` (forecast rev 8/5/2026) | Horizon (22 wks from 8/3), holidays, PTO, tray hours, recurring load, light-tray gap |
+| `Master_Production_Plan_Updated_1.xlsx` (as of 8/7/2026) | Customer orders (Home Depot, Corning, SpaceX, Mercado Libre) with handoff dates and NetSuite work-order % complete; 4 SlipLift / 3 Heavy Tray line split; 7 h + 1 h OT days; bin hours (40); special-project windows (Strip v3, 52V battery, Rebuild 3x bots, Slip Minibot) |
+| 8/5 demand forecast rev (via v2 workbook §2/§7) | 42 SlipLifts, 45 heavy trays, 60 light trays — seeded as orders + build-to-stock remainder |
+
+Demand is two-layered like the Master Production Plan: **customer orders** carry hard handoff
+dates and progress-adjusted remaining work; the **weekly build plan** is build-to-stock on top,
+seeded as the forecast minus order units so totals are preserved.
 
 The tool's 85 % utilization covers meetings/5S/breaks only, because rework, chunks, and field
 work are scheduled explicitly — it corresponds to the v2 workbook's "60 % build-only

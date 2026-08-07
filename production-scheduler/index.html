@@ -168,33 +168,42 @@ const SEED_OPS=[[0,1,"install FR/ BL motor module",20,40,2,"M"],[0,2,"install FL
 function seedState(){
   const ops = SEED_OPS.map((r,i)=>({id:'op'+(i+1),phase:SEED_PHASES[r[0]],seq:r[1],name:r[2],
     minEach:r[3],minTotal:r[4],qty:r[5],type:r[6]}));
-  // Build plan per headcount workbook v2 (forecast rev 8/5/2026, Tops-Down §2/§7):
-  // Lifts 3/3/2/2/2 in Aug then 2/wk through 12/7 + 1/1 wks of 12/14 & 12/21 (= 42);
-  // heavy trays 10/5/10/10/10 across Aug (= 45); light trays 10/wk 9/7–10/12 (= 60).
-  const sl=[3,3,2,2,2, 2,2,2,2,2,2, 2,2,2,2,2,2,2,2, 1,1,0];           // = 42
-  const ht=[10,5,10,10,10, 0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0];       // = 45
+  // Build-to-stock plan = v2 forecast (lifts 3/3/2/2/2 then 2/wk through 12/21 = 42;
+  // heavy trays 45; light trays 60) MINUS the units covered by dated customer orders
+  // above (11 lifts, 43 heavy trays), removed from the earliest weeks.
+  const sl=[0,0,0,0,1, 2,2,2,2,2,2, 2,2,2,2,2,2,2,2, 1,1,0];           // = 31 stock (+11 in orders = 42)
+  const ht=[0,0,0,0,2, 0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0];           // = 2 stock (+43 in orders = 45)
   const lt=[0,0,0,0,0, 10,10,10,10,10,10, 0,0,0,0,0,0,0,0, 0,0,0];     // = 60
   const plan=[]; for(let w=0;w<22;w++) plan.push({slipLifts:sl[w]||0,heavyTrays:ht[w]||0,lightTrays:lt[w]||0});
   return {
     version:1,
     assumptions:{
       horizonStart:'2026-08-03', weeks:22,
-      techs:7, hoursPerDay:8, utilization:0.85, efficiency:0.80, ptoDays:5,
-      stations:3, benchSeats:4, trayHours:10, requireBenchBeforeMain:true, leadWeeks:2,
+      techs:7, hoursPerDay:7, otHoursPerDay:1, utilization:0.85, efficiency:0.80, ptoDays:5,
+      stations:3, benchSeats:4, trayHours:10, binHours:40, requireBenchBeforeMain:true, leadWeeks:2,
       mainMode:'dag', maxCrewPerRobot:2,
       holidays:['2026-09-07','2026-11-26','2026-11-27','2026-12-24','2026-12-25','2026-12-31'],
     },
+    // Customer orders per Master Production Plan (Demand Plan tab, as of 8/7/2026).
+    // done* = % of that work stream already complete in NetSuite work orders (Summary tab).
+    orders:[
+      {name:'Home Depot',slipLifts:2,heavyTrays:16,bins:0,handoff:'2026-08-07',doneSL:0.92,doneHT:0.16,doneBins:0},
+      {name:'Corning',slipLifts:6,heavyTrays:18,bins:0,handoff:'2026-08-17',doneSL:0.11,doneHT:0,doneBins:0},
+      {name:'SpaceX',slipLifts:3,heavyTrays:9,bins:0,handoff:'2026-09-21',doneSL:0,doneHT:0,doneBins:0},
+      {name:'Mercado Libre',slipLifts:0,heavyTrays:0,bins:10,handoff:'2026-09-18',doneSL:0,doneHT:0,doneBins:0},
+    ],
     buildPlan:plan,
     operations:ops,
-    // Current direct-labor crew per headcount workbook v2 (Gusto roster 7/15/2026, Historical §3)
+    // Crew and line split per Master Production Plan (Capacity Plan tab): 4 SlipLift techs,
+    // 3 Heavy Tray techs — the plan treats the lines as NOT interchangeable.
     technicians:[
-      {name:'Jose Pagan',role:'any'},
-      {name:'Gerald Mack',role:'any'},
-      {name:'Maurice Goodwin',role:'any'},
-      {name:'Jaron Bryant',role:'any'},
-      {name:'Oswaldo Exposito',role:'any'},
-      {name:'Todd VanDyke',role:'any'},
-      {name:'Johnathan Argueta',role:'any'},
+      {name:'Jaron Bryant (JB)',role:'robot'},
+      {name:'Todd VanDyke',role:'robot'},
+      {name:'Oswaldo Exposito (Oz)',role:'robot'},
+      {name:'Johnathan Argueta (Johnny)',role:'robot'},
+      {name:'Maurice Goodwin',role:'tray'},
+      {name:'Gerald Mack',role:'tray'},
+      {name:'Jose Pagan',role:'tray'},
     ],
     dependencies:SEED_DEPS.map(d=>({before:d[0],after:d[1]})),
     recurring:[
@@ -203,11 +212,13 @@ function seedState(){
       {name:'ECO-driven rework / retrofits',hrsPerWeek:10},
       {name:'Assembly-driven QC rework',hrsPerWeek:10},
     ],
+    // Special projects with real windows per Master Production Plan (Impact Log / Demand Plan).
+    // MeLi bins moved to the Mercado Libre order above.
     chunks:[
-      {name:'MeLi bin assembly',hours:400,startWeek:1,endWeek:22},
-      {name:'Battery refurbishment',hours:125,startWeek:1,endWeek:22},
-      {name:'Robot scrap (gen 2.x)',hours:150,startWeek:1,endWeek:22},
-      {name:'Slip Mini',hours:400,startWeek:1,endWeek:22},
+      {name:'Strip v3 Bots for Parts & Scrap',hours:240,startWeek:1,endWeek:3},
+      {name:'52V Battery Rework',hours:125,startWeek:3,endWeek:4},
+      {name:'Rebuild 3x Engineering Bots',hours:180,startWeek:6,endWeek:6},
+      {name:'Slip Minibot',hours:150,startWeek:9,endWeek:13},
       {name:'Deployment accessories',hours:40,startWeek:1,endWeek:22},
     ],
     // Forecast gap per v2: heavy-tray hole closed (builds pulled into Aug); light trays still end
@@ -238,10 +249,11 @@ function buildCalendar(a){
     if(hol.has(fmtISO(d))) continue;
     days.push(d);
   }
+  const hpd=a.hoursPerDay+(a.otHoursPerDay||0);            // attended hours/day incl. standing OT
   const workdaysInHorizon=days.filter(d=>d>=start&&(d-start)/864e5<horizonDays).length;
-  const workdayHours=workdaysInHorizon*a.hoursPerDay;
-  const ptoFactor=Math.max(0.01,1-(a.ptoDays*a.hoursPerDay)/Math.max(1,workdayHours));
-  const dayEff=a.hoursPerDay*60*a.utilization*ptoFactor;   // effective minutes per tech-day
+  const workdayHours=workdaysInHorizon*hpd;
+  const ptoFactor=Math.max(0.01,1-(a.ptoDays*hpd)/Math.max(1,workdayHours));
+  const dayEff=hpd*60*a.utilization*ptoFactor;             // effective minutes per tech-day
   const weeks=[];
   for(let w=0;w<a.weeks;w++){
     const ws=addDays(start,w*7);
@@ -266,7 +278,8 @@ function buildCalendar(a){
     return days.filter(d=>d<we).length*dayEff;
   }
   const leadWorkdays=days.filter(d=>d<start).length;
-  return {start,days,dayEff,ptoFactor,weeks,workdaysInHorizon,leadWorkdays,effToDate,dateToWeek,weekStartEff,weekEndEff,
+  function dateToEff(d){return days.filter(x=>x<d).length*dayEff;}
+  return {start,days,dayEff,hpd,ptoFactor,weeks,workdaysInHorizon,leadWorkdays,effToDate,dateToWeek,weekStartEff,weekEndEff,dateToEff,
     horizonEndEff:weekEndEff(a.weeks-1)};
 }
 
@@ -282,36 +295,63 @@ function buildTasks(st,cal){
     depsByAfter.get(d.after).push(d.before);
   });
   let unitNo=0;
+  const eff=Math.max(0.05,a.efficiency);
+  // One SlipLift = all bench ops (parallel) + main ops (per mainMode). scale<1 models
+  // work already completed (order % complete); dueDateISO overrides the week-end due date.
+  function makeUnit(unit,dueEff,dueWeek,scale,order,dueDateISO){
+    unitNo++;
+    const benchIds=[];
+    benchOps.forEach(o=>{
+      const id=unit+':'+o.id;
+      benchIds.push(id);
+      tasks.push({id,unit,unitNo,dueWeek,order,dueDateISO,label:o.name,cat:'bench',
+        dur:o.minTotal/eff*scale,release:0,due:dueEff,preds:[],needsBench:true});
+    });
+    const mainIdByName=new Map(mainOps.map(o=>[o.name,unit+':'+o.id]));
+    let prev=null;
+    mainOps.forEach(o=>{
+      const id=unit+':'+o.id;
+      let preds;
+      if((a.mainMode||'serial')==='dag'){
+        // precedence graph from the MBOM dependencies sheet; ops without main-line
+        // predecessors gate on bench completion (subassembly availability)
+        preds=(depsByAfter.get(o.name)||[]).map(n=>mainIdByName.get(n)).filter(Boolean);
+        if(!preds.length&&a.requireBenchBeforeMain)preds=benchIds.slice();
+      }else{
+        preds=prev?[prev]:(a.requireBenchBeforeMain?benchIds.slice():[]);
+      }
+      tasks.push({id,unit,unitNo,dueWeek,order,dueDateISO,label:o.name,cat:'main',
+        dur:o.minTotal/eff*scale,release:0,due:dueEff,preds,needsStation:true});
+      prev=id;
+    });
+  }
+  const orderCode=name=>{
+    const w=String(name||'').trim().split(/\s+/);
+    return (w.length>1?w.map(x=>x[0]).join(''):String(name||'X').slice(0,2)).toUpperCase().slice(0,3);
+  };
+  // Customer orders: hard due dates (handoff), progress-adjusted remaining work
+  (st.orders||[]).forEach(o=>{
+    if(!o.handoff)return;
+    const hd=parseISO(o.handoff);
+    const dueEff=cal.dateToEff(addDays(hd,1));   // end of the handoff day
+    const w=Math.max(0,Math.min(a.weeks-1,Math.floor((hd-cal.start)/(7*864e5))));
+    const code=orderCode(o.name);
+    const slScale=Math.max(0,1-(o.doneSL||0));
+    if(slScale>0.001)for(let k=1;k<=(o.slipLifts||0);k++)
+      makeUnit(code+'-L'+k,dueEff,w,slScale,o.name,o.handoff);
+    const htLeft=Math.max(0,Math.round((o.heavyTrays||0)*(1-(o.doneHT||0))));
+    for(let t=1;t<=htLeft;t++)
+      tasks.push({id:code+'-HT'+t,unit:null,dueWeek:w,order:o.name,label:'Heavy tray — '+o.name,
+        cat:'tray',dur:a.trayHours*60,release:0,due:dueEff,preds:[]});
+    const binsLeft=Math.max(0,Math.round((o.bins||0)*(1-(o.doneBins||0))));
+    for(let b=1;b<=binsLeft;b++)
+      tasks.push({id:code+'-BIN'+b,unit:null,dueWeek:w,order:o.name,label:'Bin — '+o.name,
+        cat:'tray',dur:(a.binHours||40)*60,release:0,due:dueEff,preds:[]});
+  });
+  // Build-to-stock plan: due at the end of the plan week
   st.buildPlan.forEach((wk,w)=>{
-    for(let k=0;k<(wk.slipLifts||0);k++){
-      unitNo++;
-      const unit='SL-'+String(unitNo).padStart(2,'0');
-      const due=cal.weekEndEff(w);
-      const benchIds=[];
-      benchOps.forEach(o=>{
-        const id=unit+':'+o.id;
-        benchIds.push(id);
-        tasks.push({id,unit,unitNo,dueWeek:w,label:o.name,cat:'bench',
-          dur:o.minTotal/Math.max(0.05,a.efficiency),release:0,due,preds:[],needsBench:true});
-      });
-      const mainIdByName=new Map(mainOps.map(o=>[o.name,unit+':'+o.id]));
-      let prev=null;
-      mainOps.forEach(o=>{
-        const id=unit+':'+o.id;
-        let preds;
-        if((a.mainMode||'serial')==='dag'){
-          // precedence graph from the MBOM dependencies sheet; ops without main-line
-          // predecessors gate on bench completion (subassembly availability)
-          preds=(depsByAfter.get(o.name)||[]).map(n=>mainIdByName.get(n)).filter(Boolean);
-          if(!preds.length&&a.requireBenchBeforeMain)preds=benchIds.slice();
-        }else{
-          preds=prev?[prev]:(a.requireBenchBeforeMain?benchIds.slice():[]);
-        }
-        tasks.push({id,unit,unitNo,dueWeek:w,label:o.name,cat:'main',
-          dur:o.minTotal/Math.max(0.05,a.efficiency),release:0,due,preds,needsStation:true});
-        prev=id;
-      });
-    }
+    for(let k=0;k<(wk.slipLifts||0);k++)
+      makeUnit('SL-'+String(unitNo+1).padStart(2,'0'),cal.weekEndEff(w),w,1,null,null);
     const trays=(wk.heavyTrays||0)+(wk.lightTrays||0);
     for(let t=0;t<trays;t++){
       tasks.push({id:'TR-w'+(w+1)+'-'+(t+1),unit:null,dueWeek:w,label:'Tray build (wk of '+cal.weeks[w].label+')',
@@ -342,8 +382,10 @@ function buildTasks(st,cal){
 // A technician's role limits which task categories they can take.
 function roleEligible(role,cat){
   if(!role||role==='any')return true;
+  if(role==='robot')return cat==='bench'||cat==='main';   // SlipLift line: subassembly + install
   if(role==='bench')return cat==='bench'||cat==='tray';
   if(role==='line')return cat==='main';
+  if(role==='tray')return cat==='tray'||cat==='support';  // Heavy tray line + special projects
   if(role==='support')return cat==='support'||cat==='tray';
   return true;
 }
@@ -455,6 +497,7 @@ function runSchedule(st){
   const unitMap=new Map();
   tasks.filter(x=>x.unit).forEach(x=>{
     if(!unitMap.has(x.unit))unitMap.set(x.unit,{unit:x.unit,unitNo:x.unitNo,dueWeek:x.dueWeek,
+      order:x.order||null,dueDateISO:x.dueDateISO||null,due:x.due,
       benchStart:Infinity,benchEnd:0,mainStart:Infinity,finish:0,scheduled:false});
     const u=unitMap.get(x.unit);
     if(x.start==null)return;
@@ -463,10 +506,9 @@ function runSchedule(st){
     else{u.mainStart=Math.min(u.mainStart,x.start);u.finish=Math.max(u.finish,x.end);}
   });
   unitMap.forEach(u=>{
-    u.due=cal.weekEndEff(u.dueWeek);
     u.late=u.finish>u.due+1e-6;
     u.finishDate=u.finish?cal.effToDate(u.finish-1e-6):null;
-    u.dueDate=addDays(cal.weeks[u.dueWeek].start,4); // Friday of plan week
+    u.dueDate=u.dueDateISO?parseISO(u.dueDateISO):addDays(cal.weeks[u.dueWeek].start,4); // handoff or Friday of plan week
     u.benchStartDate=isFinite(u.benchStart)?cal.effToDate(u.benchStart):null;
     u.mainStartDate=isFinite(u.mainStart)?cal.effToDate(u.mainStart):null;
     u.lateDays=u.late&&u.finishDate?Math.max(1,Math.round((u.finishDate-u.dueDate)/864e5)):0;
@@ -503,22 +545,22 @@ function runSchedule(st){
     addSpanTech(x.tech,x.cat,x.start,x.end);
   });
   // capacity per week (effective hours)
-  const capacity=cal.weeks.map(w=>nTech*w.workdays*a.hoursPerDay*a.utilization*cal.ptoFactor);
-  for(let w=a.weeks;w<nW;w++)capacity.push(nTech*5*a.hoursPerDay*a.utilization*cal.ptoFactor);
+  const capacity=cal.weeks.map(w=>nTech*w.workdays*cal.hpd*a.utilization*cal.ptoFactor);
+  for(let w=a.weeks;w<nW;w++)capacity.push(nTech*5*cal.hpd*a.utilization*cal.ptoFactor);
   // tops-down totals
   const perUnitMin=st.operations.reduce((s,o)=>s+(o.minTotal||0),0);
   const perUnitHrs=perUnitMin/60/Math.max(0.05,a.efficiency);
-  const totUnits=st.buildPlan.reduce((s,w)=>s+(w.slipLifts||0),0);
-  const totTrays=st.buildPlan.reduce((s,w)=>s+(w.heavyTrays||0)+(w.lightTrays||0),0);
-  const recHrs=st.recurring.reduce((s,r)=>s+(r.hrsPerWeek||0),0)*a.weeks;
-  const chunkHrs=st.chunks.reduce((s,c)=>s+(c.hours||0),0);
-  const demandHrs=totUnits*perUnitHrs+totTrays*a.trayHours+recHrs+chunkHrs;
-  const effHoursPerHead=cal.workdaysInHorizon*a.hoursPerDay*cal.ptoFactor*a.utilization;
+  const totTrays=tasks.filter(x=>x.cat==='tray').length;
+  const demandHrs=tasks.reduce((s,x)=>s+x.dur,0)/60;   // everything the scheduler must place
+  const effHoursPerHead=cal.workdaysInHorizon*cal.hpd*cal.ptoFactor*a.utilization;
   const capacityHrs=effHoursPerHead*nTech;
   const headsRaw=demandHrs/Math.max(1,effHoursPerHead);
+  const totUnits=units.length;
+  const unitsPerWk=new Array(a.weeks).fill(0);
+  units.forEach(u=>{if(u.dueWeek>=0&&u.dueWeek<a.weeks)unitsPerWk[u.dueWeek]++;});
   const sensitivity=[0.75,0.80,0.85,0.90].map(u=>{
-    const eff=cal.workdaysInHorizon*a.hoursPerDay*cal.ptoFactor*u;
-    return {util:u,heads:Math.ceil(demandHrs/eff)};
+    const effH=cal.workdaysInHorizon*cal.hpd*cal.ptoFactor*u;
+    return {util:u,heads:Math.ceil(demandHrs/effH)};
   });
   const lastUnit=units.filter(u=>u.finishDate).reduce((m,u)=>!m||u.finishDate>m.finishDate?u:m,null);
   // main-line throughput: station-time per robot vs station-weeks available.
@@ -552,7 +594,7 @@ function runSchedule(st){
   const lineRate=robotSpanMin>0?a.stations*stationWkEff/robotSpanMin:Infinity; // robots/week max
   const benchEffMin=st.operations.filter(o=>o.type==='B').reduce((s,o)=>s+o.minTotal,0)/Math.max(0.05,a.efficiency);
   const benchRate=benchEffMin>0?a.benchSeats*stationWkEff/benchEffMin:Infinity;
-  const peakRate=Math.max(0,...st.buildPlan.map(w=>w.slipLifts||0));
+  const peakRate=Math.max(0,...unitsPerWk);
   const busyMin=tasks.reduce((s,x)=>x.start!=null?s+x.dur:s,0);
   const techMinAvail=(cal.workdaysInHorizon+cal.leadWorkdays)*cal.dayEff;
   const horizonTechMin=nTech*techMinAvail;
@@ -588,6 +630,7 @@ function loadState(){
           s.technicians=Array.from({length:s.assumptions.techs||10},(_,i)=>({name:'Tech '+(i+1),role:'any'}));
         if(!Array.isArray(s.dependencies))
           s.dependencies=SEED_DEPS.map(d=>({before:d[0],after:d[1]}));
+        if(!Array.isArray(s.orders))s.orders=[];   // no orders injected into an edited plan — Reset to get the seed set
         return s;
       }
     }
@@ -676,7 +719,7 @@ function chartLoad(res,st){
         const d=tot-cap;
         showTip(e,`<div class="t">Week of ${res.cal.weeks[w].label}</div>
           <div class="row"><span>SlipLift builds</span><b>${hrs(b)} h</b></div>
-          <div class="row"><span>Trays</span><b>${hrs(tr)} h</b></div>
+          <div class="row"><span>Trays &amp; bins</span><b>${hrs(tr)} h</b></div>
           <div class="row"><span>Support load</span><b>${hrs(sp)} h</b></div>
           <div class="row"><span>Total / capacity</span><b>${hrs(tot)} / ${hrs(cap)} h</b></div>
           <div class="row"><span>${d>0?'Overload':'Headroom'}</span><b>${hrs(Math.abs(d))} h</b></div>`);
@@ -824,7 +867,7 @@ function viewDashboard(){
       <p class="sub">Effective hours (utilization ${Math.round(a.utilization*100)}%, PTO spread, holidays out). Dashed line = ${k.nTech}-tech capacity; ▲ = overloaded week.</p>
       <div class="legend">
         <span><span class="sw" style="background:var(--s1)"></span>SlipLift builds</span>
-        <span><span class="sw" style="background:var(--s2)"></span>Trays</span>
+        <span><span class="sw" style="background:var(--s2)"></span>Trays &amp; bins</span>
         <span><span class="sw" style="background:var(--s3)"></span>Support load (recurring + work chunks)</span>
       </div>
       <div class="svgwrap">${load.svg}</div>
@@ -836,7 +879,8 @@ function viewSchedule(){
   const gantt=chartGantt(result,state);
   const rows=result.units.map(u=>`<tr>
     <td>${esc(u.unit)}</td>
-    <td>wk of ${result.cal.weeks[u.dueWeek]?result.cal.weeks[u.dueWeek].label:'?'}</td>
+    <td>${u.order?esc(u.order):'<span class="muted">stock</span>'}</td>
+    <td>${fmtMD(u.dueDate)}</td>
     <td>${u.benchStartDate?fmtMD(u.benchStartDate):'—'}</td>
     <td>${u.mainStartDate?fmtMD(u.mainStartDate):'—'}</td>
     <td>${u.finishDate?fmtMD(u.finishDate):'—'}</td>
@@ -857,21 +901,21 @@ function viewSchedule(){
       <h2>Dispatch list</h2>
       <p class="sub">Export this as CSV (header button) to load work orders into the MES.</p>
       <div class="tablewrap"><table class="data">
-        <tr><th>Unit</th><th>Committed week</th><th>Bench start</th><th>Line start</th><th>Completes</th><th>Status</th></tr>
-        ${rows||'<tr><td colspan="6" class="muted">No units planned.</td></tr>'}
+        <tr><th>Unit</th><th>Order</th><th>Due</th><th>Bench start</th><th>Line start</th><th>Completes</th><th>Status</th></tr>
+        ${rows||'<tr><td colspan="7" class="muted">No units planned.</td></tr>'}
       </table></div>
     </div>`,
     bind(){gantt.bind();}};
 }
 
 let techDetailWeek=0;   // selected week in the Technicians tab
-const ROLE_LABELS={any:'Any',bench:'Bench',line:'Line',support:'Support'};
-const CAT_LABELS={main:'Main line',bench:'Bench',tray:'Trays',support:'Support'};
+const ROLE_LABELS={any:'Any',robot:'SlipLift line',tray:'Heavy tray line',bench:'Bench only',line:'Install only',support:'Support only'};
+const CAT_LABELS={main:'Main line',bench:'Bench',tray:'Trays & bins',support:'Support'};
 function viewTechs(){
   const a=state.assumptions;
   const k=result.kpi;
   const nW=a.weeks;
-  const capPerTechWk=5*a.hoursPerDay*a.utilization*result.cal.ptoFactor;
+  const capPerTechWk=5*result.cal.dayEff/60;
   // roster editor
   const rosterRows=state.technicians.map((tech,i)=>{
     const tt=result.techTotals[i]||{hours:0,util:0};
@@ -918,9 +962,10 @@ function viewTechs(){
   return {html:alertsHtml()+`
     <div class="card">
       <h2>Technician roster — ${state.technicians.length} heads</h2>
-      <p class="sub">Name and role feed the scheduler: <b>Any</b> takes everything, <b>Bench</b> takes subassembly + trays,
-      <b>Line</b> takes main-line installs, <b>Support</b> takes recurring/chunk work + trays. Hours and utilization are
-      computed from the current schedule (${hrs(k.techHrsAvail)} effective h available per head incl. head start).</p>
+      <p class="sub">Line split per the Master Production Plan: <b>SlipLift line</b> takes robot subassembly + installs,
+      <b>Heavy tray line</b> takes trays/bins + special projects, <b>Any</b> takes everything (narrower roles:
+      Bench only, Install only, Support only). Hours and utilization are computed from the current schedule
+      (${hrs(k.techHrsAvail)} effective h available per head incl. head start).</p>
       <div class="tablewrap"><table class="data">
         <tr><th>#</th><th>Name</th><th>Role</th><th class="num">Assigned (h)</th><th class="num">Utilization</th><th></th></tr>
         ${rosterRows}
@@ -1015,8 +1060,34 @@ function viewPlan(){
     `<button id="btn-gap" class="primary small">Add ${state.trayGap.heavy+state.trayGap.light} unplanned gap trays to plan</button>`:'';
   return {html:alertsHtml()+`
     <div class="card">
-      <h2>Weekly build plan</h2>
-      <p class="sub">Seeded from the 8/5 forecast rev (42 SlipLifts; 45 heavy trays all in Aug; 60 light trays 9/7–10/12) — edit quantities; the schedule recomputes as you type. Each SlipLift ≈ ${perUnit.toFixed(1)} h, each tray ${a.trayHours} h. ${gapBtn}</p>
+      <h2>Customer orders — hard handoff dates</h2>
+      <p class="sub">From the Master Production Plan Demand Plan tab. Each order's remaining work (scaled by % complete)
+      is scheduled against its handoff date. Bins take ${a.binHours} h each. The weekly plan below is build-to-stock
+      <em>on top of</em> these orders.</p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>Order</th><th class="num">SlipLifts</th><th class="num">Heavy trays</th><th class="num">Bins</th>
+            <th>Handoff</th><th class="num">SL % done</th><th class="num">HT % done</th><th>Status</th><th></th></tr>
+        ${(state.orders||[]).map((o,i)=>{
+          const u=result.units.filter(x=>x.order===o.name);
+          const lateN=u.filter(x=>x.late).length;
+          const chip=u.length?(lateN?`<span class="chip late">${lateN} late</span>`:'<span class="chip ok">on time</span>'):'<span class="chip tight">no units</span>';
+          return `<tr>
+          <td><input type="text" style="width:130px" data-ord="${i}:name" value="${esc(o.name)}"></td>
+          <td class="num"><input type="number" min="0" style="width:60px" data-ord="${i}:slipLifts" value="${o.slipLifts||0}"></td>
+          <td class="num"><input type="number" min="0" style="width:60px" data-ord="${i}:heavyTrays" value="${o.heavyTrays||0}"></td>
+          <td class="num"><input type="number" min="0" style="width:60px" data-ord="${i}:bins" value="${o.bins||0}"></td>
+          <td><input type="date" data-ord="${i}:handoff" value="${o.handoff||''}"></td>
+          <td class="num"><input type="number" min="0" max="100" style="width:58px" data-ord="${i}:doneSL" value="${Math.round((o.doneSL||0)*100)}"></td>
+          <td class="num"><input type="number" min="0" max="100" style="width:58px" data-ord="${i}:doneHT" value="${Math.round((o.doneHT||0)*100)}"></td>
+          <td>${chip}</td>
+          <td><button class="small" data-orddel="${i}">✕</button></td></tr>`;}).join('')}
+      </table></div>
+      <p class="sub" style="margin-top:10px"><button id="btn-add-ord" class="small">+ Add order</button></p>
+    </div>
+    <div class="card">
+      <h2>Weekly build plan — build to stock</h2>
+      <p class="sub">The v2 forecast (42 lifts / 45 heavy / 60 light) minus the units already covered by the orders above.
+      Edit quantities; the schedule recomputes as you type. Each SlipLift ≈ ${perUnit.toFixed(1)} h, each tray ${a.trayHours} h. ${gapBtn}</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;
                   background:var(--surface-2);border:1px solid var(--ring);border-radius:8px;font-size:13px">
         <b>Bulk edit:</b>
@@ -1051,6 +1122,25 @@ function viewPlan(){
           commit();
         });
       });
+      document.querySelectorAll('[data-ord]').forEach(inp=>{
+        inp.addEventListener('change',()=>{
+          const [i,f]=inp.dataset.ord.split(':');
+          const o=state.orders[+i];
+          if(f==='name')o.name=inp.value;
+          else if(f==='handoff')o.handoff=inp.value||o.handoff;
+          else if(f==='doneSL'||f==='doneHT')o[f]=Math.max(0,Math.min(100,+inp.value||0))/100;
+          else o[f]=Math.max(0,Math.round(+inp.value||0));
+          commit();
+        });
+      });
+      document.querySelectorAll('[data-orddel]').forEach(b=>b.onclick=()=>{
+        state.orders.splice(+b.dataset.orddel,1);commit();
+      });
+      $('#btn-add-ord').onclick=()=>{
+        state.orders.push({name:'New order',slipLifts:1,heavyTrays:0,bins:0,
+          handoff:fmtISO(addDays(parseISO(state.assumptions.horizonStart),28)),doneSL:0,doneHT:0,doneBins:0});
+        commit();
+      };
       $('#bulk-apply').onclick=()=>{
         const f=Math.max(1,Math.min(a.weeks,Math.round(+$('#bulk-from').value||1)))-1;
         const t=Math.max(1,Math.min(a.weeks,Math.round(+$('#bulk-to').value||a.weeks)))-1;
@@ -1181,7 +1271,9 @@ function viewAssumptions(){
       <p class="sub">Sources: headcount workbook (Jeff, 8/4/2026) and MBOM summary. Every value here is editable; the schedule recomputes immediately.</p>
       <div class="formgrid">
         ${num('techs','Direct-labor technicians (resizes roster)',1,1)}
-        ${num('hoursPerDay','Hours per day per tech',0.5,1,16)}
+        ${num('hoursPerDay','Straight-time hours per day per tech',0.5,1,16)}
+        ${num('otHoursPerDay','Standing OT hours per day per person',0.5,0,8)}
+        ${num('binHours','Man-hours per bin',1,0)}
         ${num('utilization','Direct-labor utilization (0–1)',0.01,0.3,1)}
         ${num('efficiency','Labor efficiency on MBOM times (0–1)',0.01,0.3,1)}
         ${num('ptoDays','Avg PTO days per head in horizon',1,0)}
@@ -1298,10 +1390,17 @@ function viewHelp(){
     model (≈39 station-hours per robot). Utilization here (85%) covers meetings/5S/breaks only, because rework,
     chunks, and field work are scheduled explicitly — it maps to the workbook's "60% build-only utilization"
     convention where those are folded into the other 40%.</p>
+    <h3>Customer orders vs build-to-stock</h3>
+    <p>Demand comes from two places, matching the Master Production Plan: <b>orders</b> (Home Depot, Corning,
+    SpaceX, Mercado Libre) carry hard handoff dates and % complete from NetSuite work orders — only the remaining
+    work is scheduled; the <b>weekly plan</b> is build-to-stock on top, seeded as the v2 forecast minus the order
+    units. Together they preserve the forecast totals (42 lifts, 45 heavy trays, 60 light trays + 10 bins).</p>
     <h3>Known assumptions</h3>
-    <p>• Weekly split seeded from the 8/5 forecast rev (§7 of the headcount workbook): lifts 3/3/2/2/2 in Aug then
-    2/wk through 12/21; heavy trays 10/5/10/10/10 across Aug; light trays 10/wk 9/7–10/12.<br>
-    • Roster seeded with the 7 current direct-labor techs (Gusto 7/15/2026); the workbook says 11 are required.<br>
+    <p>• Order quantities, handoff dates, and % complete from the Master Production Plan as of 8/7/2026 — update
+    them in the Build Plan tab as work orders progress.<br>
+    • Calendar per the Capacity Plan tab: 7 straight-time hours + 1 standing OT hour per day.<br>
+    • Roster split per the Capacity Plan tab: 4 SlipLift-line techs, 3 heavy-tray-line techs (lines not
+    interchangeable — set roles to Any to model a fungible crew); the headcount workbook says 11 heads are required.<br>
     • Bench work for a robot must finish before line ops with no upstream rule (toggle in Assumptions).<br>
     • WIP lead time gives the line a head start before week 1 (default 2 weeks), modelling subassemblies and robots already in flight on the horizon start date.<br>
     • Labor is fungible across streams except where technician roles restrict it.<br>
@@ -1311,9 +1410,9 @@ function viewHelp(){
 
 /* ============================== HEADER ACTIONS ============================== */
 function exportCSV(){
-  const lines=[['unit','committed_week_start','bench_start','line_start','completion','status','late_days'].join(',')];
+  const lines=[['unit','order','due_date','bench_start','line_start','completion','status','late_days'].join(',')];
   result.units.forEach(u=>{
-    lines.push([u.unit,fmtISO(result.cal.weeks[u.dueWeek].start),
+    lines.push([u.unit,csvq(u.order||'stock'),fmtISO(u.dueDate),
       u.benchStartDate?fmtISO(u.benchStartDate):'',u.mainStartDate?fmtISO(u.mainStartDate):'',
       u.finishDate?fmtISO(u.finishDate):'',u.late?'LATE':'ON_TIME',u.lateDays].join(','));
   });
