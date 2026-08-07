@@ -136,30 +136,67 @@ svg .lbl{fill:var(--ink-2)} svg .lbl-strong{fill:var(--ink);font-weight:600}
 <script>
 'use strict';
 /* ============================== SEED DATA ==============================
-   Extracted 2026-08-07 from mbom_tree_260805_1436_ET_edited.xlsx (operations_all)
-   and BOY_Manufacturing_Headcount_TopsDown.xlsx (Jeff's inputs, 8/4/2026). */
+   Extracted 2026-08-07 from mbom_tree_260805_1436_ET_edited_1.xlsx (operations_all +
+   dependencies) and BOY_Manufacturing_Headcount_TopsDown_v2.xlsx (forecast rev 8/5/2026,
+   Gusto roster 7/15/2026). */
 const SEED_PHASES=["Lineside Install","COTS Modifications","Flashed Devices","Major Subassemblies","Peripheral Subassemblies"];
+// Main-line precedence (mbom_tree ..._edited_1.xlsx › dependencies, 8/7/2026): [before, after]
+const SEED_DEPS=[
+ ["Complete Pre-Turn on Checks","Complete Post-Turn on Checks"],
+ ["install scissor lift","install lift sensor assemblies"],
+ ["install scissor lift","install/ route all cross-bot harnesses and cables"],
+ ["install FL/BR motor module","install/ route all cross-bot harnesses and cables"],
+ ["install FR/ BL motor module","install/ route all cross-bot harnesses and cables"],
+ ["install/ route all cross-bot harnesses and cables","install hydraulic manifolds/ terminate and adjust manual release cables"],
+ ["install hydraulic manifolds/ terminate and adjust manual release cables","Install lineside hydraulics F/B"],
+ ["Install lineside hydraulics F/B","install hall sensor wire retainers under chassis with lifts fully extened"],
+ ["Install lineside hydraulics F/B","install gas springs"],
+ ["Install lineside hydraulics F/B","Install Scissor lift top plate accessories"],
+ ["Install lineside hydraulics F/B","install computer carrier plate"],
+ ["Install lineside hydraulics F/B","install LOTO carrier plate"],
+ ["Install lineside hydraulics F/B","install safety carrier plate"],
+ ["Install lineside hydraulics F/B","install charge carrier plate"],
+ ["Install lineside hydraulics F/B","install aux battery carrier plate"],
+ ["Install lineside hydraulics F/B","install aux battery strikeplate cover"],
+ ["Install lineside hydraulics F/B","Install F/B spotlights"],
+ ["Install lineside hydraulics F/B","Install side spotlights"],
+ ["Install lineside hydraulics F/B","Install F camera"],
+ ["Install lineside hydraulics F/B","Install B camera"],
+ ["Install lineside hydraulics F/B","Install Towing switches"]];
 const SEED_OPS=[[0,1,"install FR/ BL motor module",20,40,2,"M"],[0,2,"install FL/BR motor module",20,40,2,"M"],[0,3,"install scissor lift",45,180,4,"M"],[0,4,"install lift sensor assemblies",4,16,4,"M"],[0,5,"install/ route all cross-bot harnesses and cables",120,120,1,"M"],[0,6,"install hydraulic manifolds/ terminate and adjust manual release cables",4,8,2,"M"],[0,7,"Install lineside hydraulics F/B",120,240,2,"M"],[0,8,"install hall sensor wire retainers under chassis with lifts fully extened",5,20,4,"M"],[0,9,"install gas springs",10,40,4,"M"],[0,10,"Install Scissor lift top plate accessories",10,40,4,"M"],[0,11,"install computer carrier plate",5,5,1,"M"],[0,12,"install LOTO carrier plate",3,3,1,"M"],[0,13,"install safety carrier plate",3,3,1,"M"],[0,14,"install charge carrier plate",5,5,1,"M"],[0,15,"install aux battery carrier plate",25,25,1,"M"],[0,16,"install aux battery strikeplate cover",10,10,1,"M"],[0,17,"Install F/B spotlights",5,10,2,"M"],[0,18,"Install side spotlights",5,20,4,"M"],[0,19,"Install F camera",5,5,1,"M"],[0,20,"Install B camera",5,5,1,"M"],[0,21,"Install Towing switches",5,10,2,"M"],[0,22,"install F lidar",5,5,1,"M"],[0,23,"install B lidar",5,5,1,"M"],[0,24,"install L lidar",5,5,1,"M"],[0,25,"install R lidar",10,10,1,"M"],[0,26,"install FR/BL estops",7,14,2,"M"],[0,27,"install FL/BR estops",7,14,2,"M"],[0,28,"install middle estops",5,10,2,"M"],[0,29,"install FR LED assembly",1,2,2,"M"],[0,30,"install FL LED assembly",1,2,2,"M"],[0,31,"install RFID reader assembly",3,3,1,"M"],[0,32,"install GPS/ LTE antenna bracket",3,3,1,"M"],[0,33,"install grounding chain",2,2,1,"M"],[0,34,"install wall charger plug bracket",4,4,1,"M"],[0,35,"install batteries and wiring",75,75,1,"M"],[0,45,"install clipnut brackets and clipnuts for covers",20,20,1,"M"],[0,46,"install gasket tape for covers",45,45,1,"M"],[0,36,"Terminate Chassis Wiring to Computer Carrier Plate",100,100,1,"M"],[0,37,"Terminate Chassis Wiring to Aux Battery Carrier Plate",10,10,1,"M"],[0,38,"Terminate Chassis Wiring to LOTO Carrier Plate",40,40,1,"M"],[0,39,"Terminate Chassis Wiring to Charge Carrier Plate",20,20,1,"M"],[0,40,"Terminate Chassis Wiring to Safety Carrier Plate",20,20,1,"M"],[0,41,"Terminate Chassis Wiring at Front Hydraulic Bay",30,30,1,"M"],[0,42,"Terminate Chassis Wiring at Rear Hydraulic Bay",30,30,1,"M"],[0,43,"Complete Pre-Turn on Checks",10,10,1,"M"],[0,44,"Complete Post-Turn on Checks",120,120,1,"M"],[0,47,"Drop robot off of casters",30,30,1,"M"],[0,48,"Align and calibrate all LiDAR",45,45,1,"M"],[0,49,"Perform functional testing",180,180,1,"M"],[0,50,"install wheel fender covers",5,20,4,"M"],[0,51,"install F/B plastic end covers",15,30,2,"M"],[0,52,"install hydraulic cylinder covers",5,10,2,"M"],[0,53,"install large middle front cover",25,25,1,"M"],[0,54,"install large middle back cover",25,25,1,"M"],[0,55,"apply all decals",50,50,1,"M"],[1,1,"Assemble string potentiometer harness",20,80,1,"B"],[1,2,"Assemble Proximity sensor harness",7,28,1,"B"],[1,3,"assemble LED module",20,160,1,"B"],[1,4,"assemble aux battery limit switch harness",15,15,1,"B"],[1,5,"assemble spotlight harness",10,60,1,"B"],[1,6,"assemble motor harness",100,400,1,"B"],[1,7,"assemble DCV harness",25,50,1,"B"],[1,8,"assemble battery balancer harness",35,35,1,"B"],[1,9,"asssemble F LiDAR data harness",15,15,1,"B"],[1,10,"asssemble B LiDAR data harness",15,15,1,"B"],[1,11,"asssemble L LiDAR data harness",15,15,1,"B"],[1,12,"asssemble R LiDAR data harness",15,15,1,"B"],[1,13,"assemble F LiDAR power harness",10,10,1,"B"],[1,14,"assemble B LiDAR power harness",10,10,1,"B"],[1,15,"assemble L LiDAR power harness",10,10,1,"B"],[1,16,"assemble R LiDAR power harness",10,10,1,"B"],[1,17,"solder RFID Reader to headers",20,40,1,"B"],[2,1,"Assemble and flash jetson",30,60,1,"B"],[2,2,"Flash arduino uno and connect RFID reader",5,10,1,"B"],[2,3,"Flash Arduino OPTA",5,5,1,"B"],[2,4,"Flash Front Motor Controller",5,5,1,"B"],[2,5,"Flash Back Motor Controller",5,5,1,"B"],[2,6,"Flash Front LiDAR",5,5,1,"B"],[2,7,"Flash Back LiDAR",5,5,1,"B"],[2,8,"Flash Left LiDAR",5,5,1,"B"],[2,9,"Flash Right LiDAR",5,5,1,"B"],[2,10,"Flash F Camera",5,5,1,"B"],[2,11,"Flash B Camera",5,5,1,"B"],[2,12,"Asssemble, flash and test safety system",25,25,1,"B"],[2,13,"Configure output voltage on Orion DC/DC",10,10,1,"B"],[2,14,"Flash FORT VSC to Prod WES (tool)",10,10,1,"B"],[2,15,"Configure SVR1000",5,5,1,"B"],[2,16,"Flash Robot Xbee Controller",15,15,1,"B"],[2,17,"Assemble and configure router",15,15,1,"B"],[2,18,"Assemble and configure serial device hub",10,10,1,"B"],[3,1,"Assemble FL motor module assembly",75,150,1,"B"],[3,2,"Assemble FR motor module assembly",75,150,1,"B"],[3,3,"Assemble scissor lift assembly",65,260,1,"B"],[3,4,"Assemble computer carrier plate",180,180,1,"B"],[3,5,"Assemble LOTO carrier plate",60,60,1,"B"],[3,6,"Assemble safety carrier plate",25,25,1,"B"],[3,7,"Assemble charge carrier plate",20,20,1,"B"],[3,8,"Assemble aux battery carrier plate",110,110,1,"B"],[3,9,"Assemble HPU",5,10,1,"B"],[3,10,"Assemble hydraulic manifold",53,212,1,"B"],[3,11,"Assemble hydraulic cylinder",5,20,1,"B"],[4,1,"assemble FL/ BR Estop",3,6,1,"B"],[4,2,"assemble FR/BL Estop",3,6,1,"B"],[4,3,"assemble Middle estop",3,6,1,"B"],[4,4,"assemble F camera assembly",5,5,1,"B"],[4,5,"assemble B camera assembly",5,5,1,"B"],[4,6,"assemble towing switch assembly",3,6,1,"B"],[4,7,"assemble F LiDAR assembly",3,3,1,"B"],[4,8,"assemble B LiDAR assembly",3,3,1,"B"],[4,9,"assemble L LiDAR assembly",3,3,1,"B"],[4,10,"assemble R LiDAR assembly",3,3,1,"B"],[4,11,"assemble F/B spotlight assembly",10,20,1,"B"],[4,12,"assemble Side spotlight assembly",10,40,1,"B"],[4,13,"assemble FR/ BL LED assembly",5,10,1,"B"],[4,14,"assemble FL/ BR LED assembly",5,10,1,"B"],[4,15,"assemble RFID reader assembly",15,15,1,"B"],[4,16,"assemble lift sensors assembly",5,20,1,"B"],[4,17,"assemble aux batt strikeplate assembly",5,5,1,"B"]];
 
 function seedState(){
   const ops = SEED_OPS.map((r,i)=>({id:'op'+(i+1),phase:SEED_PHASES[r[0]],seq:r[1],name:r[2],
     minEach:r[3],minTotal:r[4],qty:r[5],type:r[6]}));
-  // Build plan: 42 SlipLifts (3/wk Aug tapering to 2/wk), 75 heavy trays (~10/wk through wk of 9/21).
-  // Weekly split is an assumption seeded from the forecast summary — edit in the Build Plan tab.
-  const sl=[3,3,3,3,3,3,3,3, 2,2,2,2,2,2,2,2,2, 0,0,0,0,0];           // = 42
-  const ht=[10,10,10,10,10,10,10,5, 0,0,0,0,0,0,0,0,0,0,0,0,0,0];      // = 75
-  const plan=[]; for(let w=0;w<22;w++) plan.push({slipLifts:sl[w]||0,heavyTrays:ht[w]||0,lightTrays:0});
+  // Build plan per headcount workbook v2 (forecast rev 8/5/2026, Tops-Down §2/§7):
+  // Lifts 3/3/2/2/2 in Aug then 2/wk through 12/7 + 1/1 wks of 12/14 & 12/21 (= 42);
+  // heavy trays 10/5/10/10/10 across Aug (= 45); light trays 10/wk 9/7–10/12 (= 60).
+  const sl=[3,3,2,2,2, 2,2,2,2,2,2, 2,2,2,2,2,2,2,2, 1,1,0];           // = 42
+  const ht=[10,5,10,10,10, 0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0];       // = 45
+  const lt=[0,0,0,0,0, 10,10,10,10,10,10, 0,0,0,0,0,0,0,0, 0,0,0];     // = 60
+  const plan=[]; for(let w=0;w<22;w++) plan.push({slipLifts:sl[w]||0,heavyTrays:ht[w]||0,lightTrays:lt[w]||0});
   return {
     version:1,
     assumptions:{
       horizonStart:'2026-08-03', weeks:22,
-      techs:10, hoursPerDay:8, utilization:0.85, efficiency:0.80, ptoDays:5,
+      techs:7, hoursPerDay:8, utilization:0.85, efficiency:0.80, ptoDays:5,
       stations:3, benchSeats:4, trayHours:10, requireBenchBeforeMain:true, leadWeeks:2,
+      mainMode:'dag', maxCrewPerRobot:2,
       holidays:['2026-09-07','2026-11-26','2026-11-27','2026-12-24','2026-12-25','2026-12-31'],
     },
     buildPlan:plan,
     operations:ops,
-    technicians:Array.from({length:10},(_,i)=>({name:'Tech '+(i+1),role:'any'})),
+    // Current direct-labor crew per headcount workbook v2 (Gusto roster 7/15/2026, Historical §3)
+    technicians:[
+      {name:'Jose Pagan',role:'any'},
+      {name:'Gerald Mack',role:'any'},
+      {name:'Maurice Goodwin',role:'any'},
+      {name:'Jaron Bryant',role:'any'},
+      {name:'Oswaldo Exposito',role:'any'},
+      {name:'Todd VanDyke',role:'any'},
+      {name:'Johnathan Argueta',role:'any'},
+    ],
+    dependencies:SEED_DEPS.map(d=>({before:d[0],after:d[1]})),
     recurring:[
       {name:'Field parts collection / build',hrsPerWeek:20},
       {name:'Part quality rework',hrsPerWeek:20},
@@ -168,14 +205,14 @@ function seedState(){
     ],
     chunks:[
       {name:'MeLi bin assembly',hours:400,startWeek:1,endWeek:22},
-      {name:'Battery refurbishment',hours:150,startWeek:1,endWeek:22},
+      {name:'Battery refurbishment',hours:125,startWeek:1,endWeek:22},
       {name:'Robot scrap (gen 2.x)',hours:150,startWeek:1,endWeek:22},
       {name:'Slip Mini',hours:400,startWeek:1,endWeek:22},
       {name:'Deployment accessories',hours:40,startWeek:1,endWeek:22},
     ],
-    // Forecast gap flagged in the headcount file: build plan is short 26 trays vs. commitments
-    // (heavy −12 by wk of Oct 26, light −14 by wk of Dec 7). One click adds them in the Build Plan tab.
-    trayGap:{heavy:12,heavyByWeek:13,light:14,lightByWeek:19,applied:false},
+    // Forecast gap per v2: heavy-tray hole closed (builds pulled into Aug); light trays still end
+    // the year 14 short vs the 16-tray demand wk of 12/7. One click adds them in the Build Plan tab.
+    trayGap:{heavy:0,heavyByWeek:13,light:14,lightByWeek:19,applied:false},
   };
 }
 
@@ -239,6 +276,11 @@ function buildTasks(st,cal){
   const tasks=[];
   const mainOps=st.operations.filter(o=>o.type==='M').slice().sort((x,y)=>x.seq-y.seq);
   const benchOps=st.operations.filter(o=>o.type==='B');
+  const depsByAfter=new Map();
+  (st.dependencies||[]).forEach(d=>{
+    if(!depsByAfter.has(d.after))depsByAfter.set(d.after,[]);
+    depsByAfter.get(d.after).push(d.before);
+  });
   let unitNo=0;
   st.buildPlan.forEach((wk,w)=>{
     for(let k=0;k<(wk.slipLifts||0);k++){
@@ -252,10 +294,19 @@ function buildTasks(st,cal){
         tasks.push({id,unit,unitNo,dueWeek:w,label:o.name,cat:'bench',
           dur:o.minTotal/Math.max(0.05,a.efficiency),release:0,due,preds:[],needsBench:true});
       });
+      const mainIdByName=new Map(mainOps.map(o=>[o.name,unit+':'+o.id]));
       let prev=null;
       mainOps.forEach(o=>{
         const id=unit+':'+o.id;
-        const preds=prev?[prev]:(a.requireBenchBeforeMain?benchIds.slice():[]);
+        let preds;
+        if((a.mainMode||'serial')==='dag'){
+          // precedence graph from the MBOM dependencies sheet; ops without main-line
+          // predecessors gate on bench completion (subassembly availability)
+          preds=(depsByAfter.get(o.name)||[]).map(n=>mainIdByName.get(n)).filter(Boolean);
+          if(!preds.length&&a.requireBenchBeforeMain)preds=benchIds.slice();
+        }else{
+          preds=prev?[prev]:(a.requireBenchBeforeMain?benchIds.slice():[]);
+        }
         tasks.push({id,unit,unitNo,dueWeek:w,label:o.name,cat:'main',
           dur:o.minTotal/Math.max(0.05,a.efficiency),release:0,due,preds,needsStation:true});
         prev=id;
@@ -321,6 +372,14 @@ function runSchedule(st){
   const running=[];                    // tasks in progress
   let freeTechs=[...Array(nTech).keys()];  // FIFO queue -> round-robin load spread
   let freeStation=Math.max(1,a.stations), freeBench=Math.max(1,a.benchSeats);
+  // A robot occupies one station from its first main op to its last; in dag mode up to
+  // maxCrewPerRobot techs may work the same robot concurrently (serial chaining caps it at 1).
+  const maxCrew=(a.mainMode==='dag')?Math.max(1,Math.round(a.maxCrewPerRobot||1)):1;
+  const unitMain={};
+  tasks.forEach(x=>{
+    if(x.cat!=='main')return;
+    (unitMain[x.unit]=unitMain[x.unit]||{total:0,done:0,running:0,has:false}).total++;
+  });
   let t=0, done=0;
   const HARD_STOP=cal.days.length*cal.dayEff;
   while(done<tasks.length){
@@ -335,7 +394,11 @@ function runSchedule(st){
       started=false;
       for(let i=0;i<ready.length;i++){
         const task=ready[i];
-        if(task.needsStation&&freeStation<1)continue;
+        const um=task.needsStation?unitMain[task.unit]:null;
+        if(um){
+          if(!um.has&&freeStation<1)continue;
+          if(um.running>=maxCrew)continue;
+        }
         if(task.needsBench&&freeBench<1)continue;
         let qi=-1;
         for(let q=0;q<freeTechs.length;q++){
@@ -344,7 +407,8 @@ function runSchedule(st){
         if(qi<0)continue;              // no eligible technician free
         task.tech=freeTechs.splice(qi,1)[0];
         ready.splice(i,1);
-        if(task.needsStation)freeStation--; if(task.needsBench)freeBench--;
+        if(um){if(!um.has){um.has=true;freeStation--;}um.running++;}
+        if(task.needsBench)freeBench--;
         task.start=t; task.end=t+task.dur;
         running.push(task);
         started=true;
@@ -366,7 +430,13 @@ function runSchedule(st){
       const r=running[i];
       if(r.end<=t){
         running.splice(i,1);
-        freeTechs.push(r.tech); if(r.needsStation)freeStation++; if(r.needsBench)freeBench++;
+        freeTechs.push(r.tech);
+        if(r.needsStation){
+          const um=unitMain[r.unit];
+          um.running--; um.done++;
+          if(um.done>=um.total){um.has=false;freeStation++;}
+        }
+        if(r.needsBench)freeBench++;
         done++;
         (succ.get(r.id)||[]).forEach(sid=>{
           const n=remainingPreds.get(sid)-1;
@@ -451,10 +521,35 @@ function runSchedule(st){
     return {util:u,heads:Math.ceil(demandHrs/eff)};
   });
   const lastUnit=units.filter(u=>u.finishDate).reduce((m,u)=>!m||u.finishDate>m.finishDate?u:m,null);
-  // main-line throughput: serial line minutes per robot vs station-weeks available
-  const mainEffMin=st.operations.filter(o=>o.type==='M').reduce((s,o)=>s+o.minTotal,0)/Math.max(0.05,a.efficiency);
+  // main-line throughput: station-time per robot vs station-weeks available.
+  // Serial mode: a robot holds its station for the sum of main-op minutes. DAG mode: the hold
+  // is bounded below by the dependency critical path and by total work / crew size.
+  const effF=Math.max(0.05,a.efficiency);
+  const mains=st.operations.filter(o=>o.type==='M');
+  const mainEffMin=mains.reduce((s,o)=>s+o.minTotal,0)/effF;
+  let robotSpanMin=mainEffMin;
+  if(a.mainMode==='dag'){
+    const dur=new Map(mains.map(o=>[o.name,o.minTotal/effF]));
+    const predsOf=new Map();
+    (st.dependencies||[]).forEach(d=>{
+      if(!dur.has(d.after)||!dur.has(d.before))return;
+      if(!predsOf.has(d.after))predsOf.set(d.after,[]);
+      predsOf.get(d.after).push(d.before);
+    });
+    const memo=new Map(),stack=new Set();let cyclic=false;
+    const longest=n=>{
+      if(memo.has(n))return memo.get(n);
+      if(stack.has(n)){cyclic=true;return 0;}
+      stack.add(n);
+      const p=(predsOf.get(n)||[]).reduce((m,q)=>Math.max(m,longest(q)),0);
+      stack.delete(n);
+      const v=p+dur.get(n);memo.set(n,v);return v;
+    };
+    let crit=0;mains.forEach(o=>{crit=Math.max(crit,longest(o.name));});
+    robotSpanMin=cyclic?mainEffMin:Math.max(crit,mainEffMin/Math.max(1,Math.round(a.maxCrewPerRobot||1)));
+  }
   const stationWkEff=5*cal.dayEff;                            // eff minutes per station-week
-  const lineRate=mainEffMin>0?a.stations*stationWkEff/mainEffMin:Infinity; // robots/week max
+  const lineRate=robotSpanMin>0?a.stations*stationWkEff/robotSpanMin:Infinity; // robots/week max
   const benchEffMin=st.operations.filter(o=>o.type==='B').reduce((s,o)=>s+o.minTotal,0)/Math.max(0.05,a.efficiency);
   const benchRate=benchEffMin>0?a.benchSeats*stationWkEff/benchEffMin:Infinity;
   const peakRate=Math.max(0,...st.buildPlan.map(w=>w.slipLifts||0));
@@ -469,7 +564,7 @@ function runSchedule(st){
   return {cal,tasks,units,weekly,capacity,techWeekly,techTotals,roster,
     kpi:{perUnitHrs,totUnits,totTrays,demandHrs,capacityHrs,effHoursPerHead,headsRaw,
       headsRounded:Math.ceil(headsRaw),sensitivity,lastUnit,lineRate,benchRate,peakRate,
-      nTech,unscheduled,techHrsAvail:techMinAvail/60,
+      nTech,unscheduled,techHrsAvail:techMinAvail/60,robotSpanHrs:robotSpanMin/60,
       lateUnits:units.filter(u=>u.late).length,
       onTime:units.filter(u=>!u.late&&u.scheduled).length,
       utilizationOfPool:Math.min(1,busyMin/Math.max(1,horizonTechMin))}};
@@ -491,6 +586,8 @@ function loadState(){
         s.assumptions=Object.assign(seedState().assumptions,s.assumptions);
         if(!Array.isArray(s.technicians)||!s.technicians.length)
           s.technicians=Array.from({length:s.assumptions.techs||10},(_,i)=>({name:'Tech '+(i+1),role:'any'}));
+        if(!Array.isArray(s.dependencies))
+          s.dependencies=SEED_DEPS.map(d=>({before:d[0],after:d[1]}));
         return s;
       }
     }
@@ -669,7 +766,8 @@ function alertsHtml(){
     items.push(['good','Capacity',`Demand ${hrs(k.demandHrs)} h fits capacity ${hrs(k.capacityHrs)} h (headroom ${hrs(k.capacityHrs-k.demandHrs)} h).`]);
   }
   if(isFinite(k.lineRate)&&k.peakRate>0&&k.lineRate<k.peakRate-0.01){
-    items.push(['crit','Line rate',`Main line maxes out at ${k.lineRate.toFixed(1)} robots/wk (${a.stations} station${a.stations>1?'s':''} × ${(k.lineRate/a.stations).toFixed(2)} robots/station-wk, serial install+test) but the plan peaks at ${k.peakRate}/wk. Add a station, split the line into more stations, or parallelize main-line ops.`]);
+    const modeTxt=a.mainMode==='dag'?`dependency-graph flow, crew of ${Math.max(1,Math.round(a.maxCrewPerRobot||1))}/robot`:'serial install+test';
+    items.push(['crit','Line rate',`Main line maxes out at ${k.lineRate.toFixed(1)} robots/wk (${a.stations} station${a.stations>1?'s':''}, ~${k.robotSpanHrs.toFixed(1)} station-hours per robot, ${modeTxt}) but the plan peaks at ${k.peakRate}/wk. Add a station or increase crew per robot.`]);
   }
   if(isFinite(k.benchRate)&&k.peakRate>0&&k.benchRate<k.peakRate-0.01){
     items.push(['crit','Bench rate',`Bench subassembly maxes out at ${k.benchRate.toFixed(1)} robot-sets/wk (${a.benchSeats} seat${a.benchSeats>1?'s':''}) but the plan peaks at ${k.peakRate} robots/wk. Add bench seats (people working subassembly in parallel) or pre-build ahead of the ramp.`]);
@@ -680,7 +778,11 @@ function alertsHtml(){
     items.push(['crit','Roster',`${k.unscheduled} tasks could not be scheduled — no technician role is eligible for them. Check roles in the Technicians tab (e.g., at least one Any/Line tech for main-line work).`]);
   }
   if(state.trayGap&&!state.trayGap.applied&&(state.trayGap.heavy+state.trayGap.light)>0){
-    items.push(['warn','Forecast gap',`Build plan is short ${state.trayGap.heavy+state.trayGap.light} trays vs. demand commitments (heavy −${state.trayGap.heavy} by wk ${state.trayGap.heavyByWeek}, light −${state.trayGap.light} by wk ${state.trayGap.lightByWeek}). Add them in the Build Plan tab.`]);
+    const g=state.trayGap;
+    const parts=[];
+    if(g.heavy>0)parts.push(`heavy −${g.heavy} by wk ${g.heavyByWeek}`);
+    if(g.light>0)parts.push(`light −${g.light} by wk ${g.lightByWeek}`);
+    items.push(['warn','Forecast gap',`Build plan is short ${g.heavy+g.light} trays vs. demand commitments (${parts.join(', ')}). Add them in the Build Plan tab.`]);
   }
   return `<div class="alerts">${items.map(([c,t,m])=>
     `<div class="alert ${c}"><span class="tag">${t}</span><span>${m}</span></div>`).join('')}</div>`;
@@ -914,7 +1016,7 @@ function viewPlan(){
   return {html:alertsHtml()+`
     <div class="card">
       <h2>Weekly build plan</h2>
-      <p class="sub">Seeded from the demand forecast summary (42 SlipLifts, 75 heavy trays) — edit quantities; the schedule recomputes as you type. Each SlipLift ≈ ${perUnit.toFixed(1)} h, each tray ${a.trayHours} h. ${gapBtn}</p>
+      <p class="sub">Seeded from the 8/5 forecast rev (42 SlipLifts; 45 heavy trays all in Aug; 60 light trays 9/7–10/12) — edit quantities; the schedule recomputes as you type. Each SlipLift ≈ ${perUnit.toFixed(1)} h, each tray ${a.trayHours} h. ${gapBtn}</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;
                   background:var(--surface-2);border:1px solid var(--ring);border-radius:8px;font-size:13px">
         <b>Bulk edit:</b>
@@ -995,6 +1097,23 @@ function viewOps(){
         <tr><th>Phase</th><th class="num">Seq</th><th>Operation</th><th class="num">Min/robot</th><th>Type</th><th></th></tr>
         ${rows}
       </table></div>
+    </div>
+    <div class="card">
+      <h2>Main-line dependencies — ${(state.dependencies||[]).length} rules</h2>
+      <p class="sub">From the MBOM <code>dependencies</code> sheet: the second op cannot start until the first finishes.
+      In <b>dependency graph</b> flow (Assumptions), ops not ordered by a rule may run in parallel on the same robot,
+      up to the crew limit. Ops with no rules wait only for bench completion.</p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>First (must finish)</th><th>Then (can start)</th><th></th></tr>
+        ${(state.dependencies||[]).map((d,i)=>`<tr><td>${esc(d.before)}</td><td>${esc(d.after)}</td>
+          <td><button class="small" data-depdel="${i}">✕</button></td></tr>`).join('')}
+      </table></div>
+      <p class="sub" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="dep-before">${state.operations.filter(o=>o.type==='M').map(o=>`<option>${esc(o.name)}</option>`).join('')}</select>
+        <span>→</span>
+        <select id="dep-after">${state.operations.filter(o=>o.type==='M').map(o=>`<option>${esc(o.name)}</option>`).join('')}</select>
+        <button id="btn-add-dep" class="small">+ Add rule</button>
+      </p>
     </div>`,
     bind(){
       document.querySelectorAll('[data-op]').forEach(inp=>{
@@ -1014,6 +1133,32 @@ function viewOps(){
         state.operations.push({id:'op'+Date.now(),phase:state.operations[0]?.phase||'Lineside Install',
           seq:maxSeq+1,name:'New operation',minEach:10,minTotal:10,qty:1,type:'M'});
         commit();
+      };
+      document.querySelectorAll('[data-depdel]').forEach(b=>b.onclick=()=>{
+        state.dependencies.splice(+b.dataset.depdel,1);commit();
+      });
+      $('#btn-add-dep').onclick=()=>{
+        const before=$('#dep-before').value,after=$('#dep-after').value;
+        if(before===after){alert('An op cannot depend on itself.');return;}
+        if(state.dependencies.some(d=>d.before===before&&d.after===after)){alert('That rule already exists.');return;}
+        // reject rules that would create a cycle
+        const adj=new Map();
+        [...state.dependencies,{before,after}].forEach(d=>{
+          if(!adj.has(d.before))adj.set(d.before,[]);
+          adj.get(d.before).push(d.after);
+        });
+        const seen=new Set(),stack=new Set();
+        let cyclic=false;
+        const dfs=n=>{
+          if(stack.has(n)){cyclic=true;return;}
+          if(seen.has(n))return;
+          seen.add(n);stack.add(n);
+          (adj.get(n)||[]).forEach(dfs);
+          stack.delete(n);
+        };
+        adj.forEach((_,n)=>dfs(n));
+        if(cyclic){alert('That rule would create a circular dependency.');return;}
+        state.dependencies.push({before,after});commit();
       };
     }};
 }
@@ -1041,6 +1186,12 @@ function viewAssumptions(){
         ${num('efficiency','Labor efficiency on MBOM times (0–1)',0.01,0.3,1)}
         ${num('ptoDays','Avg PTO days per head in horizon',1,0)}
         ${num('stations','Main-line stations (robots in parallel)',1,1,12)}
+        <label>Main-line flow
+          <select data-a="mainMode">
+            <option value="dag" ${a.mainMode==='dag'?'selected':''}>Dependency graph (parallel crew)</option>
+            <option value="serial" ${a.mainMode!=='dag'?'selected':''}>Serial, one op at a time</option>
+          </select></label>
+        ${num('maxCrewPerRobot','Max techs on one robot at once (graph mode)',1,1,6)}
         ${num('benchSeats','Bench seats (parallel bench workers)',1,1,20)}
         ${num('trayHours','Man-hours per tray',0.5,0)}
         ${num('weeks','Weeks in horizon',1,4,52)}
@@ -1066,7 +1217,7 @@ function viewAssumptions(){
           const k=inp.dataset.a;
           if(k==='requireBenchBeforeMain')a[k]=inp.checked;
           else if(k==='holidays')a[k]=inp.value.split(',').map(s=>s.trim()).filter(s=>/^\d{4}-\d{2}-\d{2}$/.test(s));
-          else if(k==='horizonStart')a[k]=inp.value||a[k];
+          else if(k==='horizonStart'||k==='mainMode')a[k]=inp.value||a[k];
           else a[k]=+inp.value||a[k];
           if(k==='weeks'){
             const w=Math.max(4,Math.min(52,Math.round(a.weeks)));a.weeks=w;
@@ -1140,13 +1291,21 @@ function viewHelp(){
     <p>Edit operations directly in the Operations tab, or regenerate the seed block from a new
     <code>operations_all</code> export and re-import via JSON. Durations are minutes per robot,
     before efficiency.</p>
+    <h3>Main-line flow modes</h3>
+    <p><b>Dependency graph</b> (default) uses the MBOM dependencies sheet: ops not ordered by a rule may run in
+    parallel on the same robot, up to the "max techs on one robot" crew limit, and the robot holds its station from
+    first op to last. <b>Serial</b> forces one op at a time in Seq order — the conservative single-tech-per-robot
+    model (≈39 station-hours per robot). Utilization here (85%) covers meetings/5S/breaks only, because rework,
+    chunks, and field work are scheduled explicitly — it maps to the workbook's "60% build-only utilization"
+    convention where those are folded into the other 40%.</p>
     <h3>Known assumptions</h3>
-    <p>• Weekly SlipLift/tray split is seeded from the forecast summary (3/wk tapering to 2/wk; trays 10/wk through
-    wk of 9/21) — adjust to the real forecast in the Build Plan tab.<br>
-    • Bench work for a robot must finish before its line install starts (toggle in Assumptions).<br>
+    <p>• Weekly split seeded from the 8/5 forecast rev (§7 of the headcount workbook): lifts 3/3/2/2/2 in Aug then
+    2/wk through 12/21; heavy trays 10/5/10/10/10 across Aug; light trays 10/wk 9/7–10/12.<br>
+    • Roster seeded with the 7 current direct-labor techs (Gusto 7/15/2026); the workbook says 11 are required.<br>
+    • Bench work for a robot must finish before line ops with no upstream rule (toggle in Assumptions).<br>
     • WIP lead time gives the line a head start before week 1 (default 2 weeks), modelling subassemblies and robots already in flight on the horizon start date.<br>
-    • Labor is fungible across streams (same caveat as the tops-down workbook).<br>
-    • The 26-tray forecast gap from the headcount file is flagged until you add it to the plan.</p>
+    • Labor is fungible across streams except where technician roles restrict it.<br>
+    • The 14 light-tray December gap from the forecast is flagged until you add it to the plan.</p>
   </div>`,bind(){}};
 }
 

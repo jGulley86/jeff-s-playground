@@ -7,10 +7,14 @@ external dependencies, so it can be hosted anywhere and embedded directly in the
 ## What it does
 
 - **Finite-capacity scheduling.** Every SlipLift in the weekly build plan expands into its
-  118 MBOM operations (bench subassembly ops run in parallel across bench seats; main-line
-  ops run in sequence per robot across stations). Trays, recurring base load (field parts,
-  QC rework, ECO retrofits), and discrete work chunks (MeLi bins, battery refurb, Slip Mini, …)
-  compete for the same technician pool. Dispatching is earliest-due-date.
+  118 MBOM operations. Bench subassembly ops run in parallel across bench seats; main-line
+  ops follow the MBOM **dependency graph** — ops not ordered by a precedence rule may run in
+  parallel on the same robot up to a crew limit (default 2 techs/robot), and the robot holds
+  its station from first op to last (a serial one-op-at-a-time mode is a toggle). Trays,
+  recurring base load (field parts, QC rework, ECO retrofits), and discrete work chunks
+  (MeLi bins, battery refurb, Slip Mini, …) compete for the same technician pool.
+  Dispatching is earliest-due-date. Dependency rules are editable in the Operations tab
+  (with cycle protection).
 - **Calendar-aware.** Weekends and holidays are skipped; PTO is pro-rated; MBOM touch times
   are divided by the labor-efficiency factor; workdays are shrunk by direct-labor utilization.
   The math reproduces the tops-down headcount workbook exactly (673.2 effective hrs/head,
@@ -32,13 +36,15 @@ external dependencies, so it can be hosted anywhere and embedded directly in the
 
 | Source | What was taken |
 |---|---|
-| `mbom_tree_260805_1436_ET_edited.xlsx` › `operations_all` | 118 operations, touch minutes per robot, Bench/Main split, sequence |
-| `BOY_Manufacturing_Headcount_TopsDown.xlsx` (Jeff, 8/4/2026) | Horizon (22 wks from 8/3), 10 techs, 85 % utilization, holidays, PTO, tray hours, recurring load, work chunks, forecast gap |
-| Demand forecast summary (via headcount workbook) | 42 SlipLifts (3/wk tapering to 2/wk), 75 heavy trays (~10/wk through wk of 9/21) |
+| `mbom_tree_260805_1436_ET_edited_1.xlsx` › `operations_all`, `dependencies` | 118 operations, touch minutes per robot, Bench/Main split, sequence, 21 main-line precedence rules |
+| `BOY_Manufacturing_Headcount_TopsDown_v2.xlsx` (forecast rev 8/5/2026) | Horizon (22 wks from 8/3), current 7-tech roster (Gusto 7/15/2026), holidays, PTO, tray hours, recurring load, work chunks, light-tray gap |
+| 8/5 demand forecast rev (via v2 workbook §2/§7) | 42 SlipLifts (3/3/2/2/2 in Aug, then 2/wk through 12/21), 45 heavy trays (all Aug), 60 light trays (10/wk, 9/7–10/12) |
 
-The weekly SlipLift/tray split is a seeded assumption — adjust it to the live forecast in the
-Build Plan tab. The SharePoint demand-forecast file wasn't reachable from this environment;
-when the real weekly numbers differ, type them in or import them via JSON.
+The tool's 85 % utilization covers meetings/5S/breaks only, because rework, chunks, and field
+work are scheduled explicitly — it corresponds to the v2 workbook's "60 % build-only
+utilization" convention, where that support work is folded into the other 40 %. The SharePoint
+demand-forecast file wasn't reachable from this environment; when the live weekly numbers
+differ, type them in (or bulk-edit) in the Build Plan tab, or import via JSON.
 
 ## Deploying / embedding in the MES
 
