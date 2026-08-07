@@ -159,6 +159,7 @@ function seedState(){
     },
     buildPlan:plan,
     operations:ops,
+    technicians:Array.from({length:10},(_,i)=>({name:'Tech '+(i+1),role:'any'})),
     recurring:[
       {name:'Field parts collection / build',hrsPerWeek:20},
       {name:'Part quality rework',hrsPerWeek:20},
@@ -287,10 +288,22 @@ function buildTasks(st,cal){
   return tasks;
 }
 
+// A technician's role limits which task categories they can take.
+function roleEligible(role,cat){
+  if(!role||role==='any')return true;
+  if(role==='bench')return cat==='bench'||cat==='tray';
+  if(role==='line')return cat==='main';
+  if(role==='support')return cat==='support'||cat==='tray';
+  return true;
+}
 // Priority-list scheduler: earliest-due-date, main-line first on ties.
-// Resources: tech pool, main-line stations, bench seats. All durations in effective minutes.
+// Resources: named technicians (role-aware), main-line stations, bench seats.
+// All durations in effective minutes. Each started task records its technician.
 function runSchedule(st){
   const a=st.assumptions;
+  const roster=(Array.isArray(st.technicians)&&st.technicians.length)?st.technicians
+    :Array.from({length:a.techs||10},(_,i)=>({name:'Tech '+(i+1),role:'any'}));
+  const nTech=roster.length;
   const cal=buildCalendar(a);
   const tasks=buildTasks(st,cal);
   const byId=new Map(tasks.map(t=>[t.id,t]));
@@ -305,8 +318,9 @@ function runSchedule(st){
     for(let i=0;i<px.length;i++){if(px[i]<py[i])return -1;if(px[i]>py[i])return 1;}return 0;};
   let ready=tasks.filter(t=>t.preds.length===0&&t.release<=0).sort(cmp);
   let notReleased=tasks.filter(t=>t.preds.length===0&&t.release>0).sort((x,y)=>x.release-y.release);
-  const running=[];                    // {end, task}
-  let freeTech=a.techs, freeStation=Math.max(1,a.stations), freeBench=Math.max(1,a.benchSeats);
+  const running=[];                    // tasks in progress
+  let freeTechs=[...Array(nTech).keys()];  // FIFO queue -> round-robin load spread
+  let freeStation=Math.max(1,a.stations), freeBench=Math.max(1,a.benchSeats);
   let t=0, done=0;
   const HARD_STOP=cal.days.length*cal.dayEff;
   while(done<tasks.length){
@@ -317,20 +331,26 @@ function runSchedule(st){
     }
     // start everything startable at time t
     let started=true;
-    while(started&&freeTech>0){
+    while(started&&freeTechs.length>0){
       started=false;
       for(let i=0;i<ready.length;i++){
         const task=ready[i];
         if(task.needsStation&&freeStation<1)continue;
         if(task.needsBench&&freeBench<1)continue;
+        let qi=-1;
+        for(let q=0;q<freeTechs.length;q++){
+          if(roleEligible(roster[freeTechs[q]].role,task.cat)){qi=q;break;}
+        }
+        if(qi<0)continue;              // no eligible technician free
+        task.tech=freeTechs.splice(qi,1)[0];
         ready.splice(i,1);
-        freeTech--; if(task.needsStation)freeStation--; if(task.needsBench)freeBench--;
+        if(task.needsStation)freeStation--; if(task.needsBench)freeBench--;
         task.start=t; task.end=t+task.dur;
         running.push(task);
         started=true;
         break;
       }
-      if(freeTech===0)break;
+      if(freeTechs.length===0)break;
     }
     if(running.length===0){
       if(notReleased.length){t=notReleased[0].release;continue;}
@@ -346,7 +366,7 @@ function runSchedule(st){
       const r=running[i];
       if(r.end<=t){
         running.splice(i,1);
-        freeTech++; if(r.needsStation)freeStation++; if(r.needsBench)freeBench++;
+        freeTechs.push(r.tech); if(r.needsStation)freeStation++; if(r.needsBench)freeBench++;
         done++;
         (succ.get(r.id)||[]).forEach(sid=>{
           const n=remainingPreds.get(sid)-1;
@@ -395,14 +415,26 @@ function runSchedule(st){
       if(we>=e)break;
     }
   }
+  // per-technician week x category hours
+  const techWeekly=Array.from({length:nTech},()=>Array.from({length:nW},()=>({main:0,bench:0,tray:0,support:0})));
+  function addSpanTech(ti,cat,s,e){
+    if(ti==null)return;
+    for(let w=0;w<nW;w++){
+      const ws=weekEffBounds[w],we=weekEffBounds[w+1];
+      const ov=Math.min(e,we)-Math.max(s,ws);
+      if(ov>0)techWeekly[ti][w][cat]+=ov/60;
+      if(we>=e)break;
+    }
+  }
   tasks.forEach(x=>{
     if(x.start==null)return;
     const arr=x.cat==='tray'?weekly.tray:(x.cat==='support'?weekly.support:weekly.build);
     addSpan(arr,x.start,x.end);
+    addSpanTech(x.tech,x.cat,x.start,x.end);
   });
   // capacity per week (effective hours)
-  const capacity=cal.weeks.map(w=>a.techs*w.workdays*a.hoursPerDay*a.utilization*cal.ptoFactor);
-  for(let w=a.weeks;w<nW;w++)capacity.push(a.techs*5*a.hoursPerDay*a.utilization*cal.ptoFactor);
+  const capacity=cal.weeks.map(w=>nTech*w.workdays*a.hoursPerDay*a.utilization*cal.ptoFactor);
+  for(let w=a.weeks;w<nW;w++)capacity.push(nTech*5*a.hoursPerDay*a.utilization*cal.ptoFactor);
   // tops-down totals
   const perUnitMin=st.operations.reduce((s,o)=>s+(o.minTotal||0),0);
   const perUnitHrs=perUnitMin/60/Math.max(0.05,a.efficiency);
@@ -412,7 +444,7 @@ function runSchedule(st){
   const chunkHrs=st.chunks.reduce((s,c)=>s+(c.hours||0),0);
   const demandHrs=totUnits*perUnitHrs+totTrays*a.trayHours+recHrs+chunkHrs;
   const effHoursPerHead=cal.workdaysInHorizon*a.hoursPerDay*cal.ptoFactor*a.utilization;
-  const capacityHrs=effHoursPerHead*a.techs;
+  const capacityHrs=effHoursPerHead*nTech;
   const headsRaw=demandHrs/Math.max(1,effHoursPerHead);
   const sensitivity=[0.75,0.80,0.85,0.90].map(u=>{
     const eff=cal.workdaysInHorizon*a.hoursPerDay*cal.ptoFactor*u;
@@ -427,10 +459,17 @@ function runSchedule(st){
   const benchRate=benchEffMin>0?a.benchSeats*stationWkEff/benchEffMin:Infinity;
   const peakRate=Math.max(0,...st.buildPlan.map(w=>w.slipLifts||0));
   const busyMin=tasks.reduce((s,x)=>x.start!=null?s+x.dur:s,0);
-  const horizonTechMin=a.techs*(cal.workdaysInHorizon+cal.leadWorkdays)*cal.dayEff;
-  return {cal,tasks,units,weekly,capacity,
+  const techMinAvail=(cal.workdaysInHorizon+cal.leadWorkdays)*cal.dayEff;
+  const horizonTechMin=nTech*techMinAvail;
+  const techTotals=roster.map((tech,ti)=>{
+    const busy=tasks.reduce((s,x)=>x.tech===ti&&x.start!=null?s+x.dur:s,0);
+    return {name:tech.name,role:tech.role,hours:busy/60,util:Math.min(1,busy/Math.max(1,techMinAvail))};
+  });
+  const unscheduled=tasks.filter(x=>x.start==null).length;
+  return {cal,tasks,units,weekly,capacity,techWeekly,techTotals,roster,
     kpi:{perUnitHrs,totUnits,totTrays,demandHrs,capacityHrs,effHoursPerHead,headsRaw,
       headsRounded:Math.ceil(headsRaw),sensitivity,lastUnit,lineRate,benchRate,peakRate,
+      nTech,unscheduled,techHrsAvail:techMinAvail/60,
       lateUnits:units.filter(u=>u.late).length,
       onTime:units.filter(u=>!u.late&&u.scheduled).length,
       utilizationOfPool:Math.min(1,busyMin/Math.max(1,horizonTechMin))}};
@@ -450,6 +489,8 @@ function loadState(){
       const s=JSON.parse(raw);
       if(s&&s.version===1){
         s.assumptions=Object.assign(seedState().assumptions,s.assumptions);
+        if(!Array.isArray(s.technicians)||!s.technicians.length)
+          s.technicians=Array.from({length:s.assumptions.techs||10},(_,i)=>({name:'Tech '+(i+1),role:'any'}));
         return s;
       }
     }
@@ -604,7 +645,7 @@ function chartGantt(res,st){
 }
 
 /* ============================== VIEWS ============================== */
-const TABS=[['dashboard','Dashboard'],['schedule','Schedule'],['plan','Build Plan'],
+const TABS=[['dashboard','Dashboard'],['schedule','Schedule'],['techs','Technicians'],['plan','Build Plan'],
   ['ops','Operations'],['assumptions','Assumptions'],['help','Help']];
 
 function render(){
@@ -612,8 +653,8 @@ function render(){
     `<button data-tab="${id}" class="${id===activeTab?'active':''}">${l}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{activeTab=b.dataset.tab;render();});
   const a=state.assumptions;
-  $('#hdr-sub').textContent=`SLIP Robotics · ${a.weeks} weeks from ${fmtMD(parseISO(a.horizonStart))} · ${a.techs} techs · finite-capacity schedule`;
-  const v={dashboard:viewDashboard,schedule:viewSchedule,plan:viewPlan,ops:viewOps,assumptions:viewAssumptions,help:viewHelp}[activeTab];
+  $('#hdr-sub').textContent=`SLIP Robotics · ${a.weeks} weeks from ${fmtMD(parseISO(a.horizonStart))} · ${state.technicians.length} techs · finite-capacity schedule`;
+  const v={dashboard:viewDashboard,schedule:viewSchedule,techs:viewTechs,plan:viewPlan,ops:viewOps,assumptions:viewAssumptions,help:viewHelp}[activeTab];
   const out=v();
   $('#main').innerHTML=out.html;
   (out.bind||(()=>{}))();
@@ -623,7 +664,7 @@ function alertsHtml(){
   const k=result.kpi,a=state.assumptions;
   const items=[];
   if(k.demandHrs>k.capacityHrs){
-    items.push(['crit','Capacity',`Demand ${hrs(k.demandHrs)} h exceeds capacity ${hrs(k.capacityHrs)} h — short ${hrs(k.demandHrs-k.capacityHrs)} h (~${(k.headsRaw-a.techs).toFixed(1)} heads). Add techs, OT, or move demand.`]);
+    items.push(['crit','Capacity',`Demand ${hrs(k.demandHrs)} h exceeds capacity ${hrs(k.capacityHrs)} h — short ${hrs(k.demandHrs-k.capacityHrs)} h (~${(k.headsRaw-k.nTech).toFixed(1)} heads). Add techs, OT, or move demand.`]);
   }else{
     items.push(['good','Capacity',`Demand ${hrs(k.demandHrs)} h fits capacity ${hrs(k.capacityHrs)} h (headroom ${hrs(k.capacityHrs-k.demandHrs)} h).`]);
   }
@@ -635,6 +676,9 @@ function alertsHtml(){
   }
   if(k.lateUnits>0)items.push(['crit','Schedule',`${k.lateUnits} of ${k.totUnits} SlipLifts finish after their plan week. See Schedule tab.`]);
   else if(k.totUnits>0)items.push(['good','Schedule',`All ${k.totUnits} SlipLifts complete within their plan weeks.`]);
+  if(k.unscheduled>0){
+    items.push(['crit','Roster',`${k.unscheduled} tasks could not be scheduled — no technician role is eligible for them. Check roles in the Technicians tab (e.g., at least one Any/Line tech for main-line work).`]);
+  }
   if(state.trayGap&&!state.trayGap.applied&&(state.trayGap.heavy+state.trayGap.light)>0){
     items.push(['warn','Forecast gap',`Build plan is short ${state.trayGap.heavy+state.trayGap.light} trays vs. demand commitments (heavy −${state.trayGap.heavy} by wk ${state.trayGap.heavyByWeek}, light −${state.trayGap.light} by wk ${state.trayGap.lightByWeek}). Add them in the Build Plan tab.`]);
   }
@@ -650,7 +694,7 @@ function viewDashboard(){
   <div class="kpis">
     <div class="kpi"><div class="label">Headcount required</div>
       <div class="value">${k.headsRounded}<small> heads</small></div>
-      <div class="note">raw ${k.headsRaw.toFixed(2)} · you have ${a.techs} <span class="${a.techs>=k.headsRounded?'up':'down'}">${a.techs>=k.headsRounded?'✓ covered':'▲ short '+(k.headsRounded-a.techs)}</span></div></div>
+      <div class="note">raw ${k.headsRaw.toFixed(2)} · you have ${k.nTech} <span class="${k.nTech>=k.headsRounded?'up':'down'}">${k.nTech>=k.headsRounded?'✓ covered':'▲ short '+(k.headsRounded-k.nTech)}</span></div></div>
     <div class="kpi"><div class="label">Demand vs capacity</div>
       <div class="value">${hrs(k.demandHrs/1000,1)}k<small> / ${hrs(k.capacityHrs/1000,1)}k h</small></div>
       <div class="note"><span class="${capDelta>=0?'up':'down'}">${capDelta>=0?'headroom':'short'} ${hrs(Math.abs(capDelta))} h</span></div></div>
@@ -675,7 +719,7 @@ function viewDashboard(){
   return {html:alertsHtml()+kpis+`
     <div class="card">
       <h2>Weekly load vs. capacity</h2>
-      <p class="sub">Effective hours (utilization ${Math.round(a.utilization*100)}%, PTO spread, holidays out). Dashed line = ${a.techs}-tech capacity; ▲ = overloaded week.</p>
+      <p class="sub">Effective hours (utilization ${Math.round(a.utilization*100)}%, PTO spread, holidays out). Dashed line = ${k.nTech}-tech capacity; ▲ = overloaded week.</p>
       <div class="legend">
         <span><span class="sw" style="background:var(--s1)"></span>SlipLift builds</span>
         <span><span class="sw" style="background:var(--s2)"></span>Trays</span>
@@ -718,6 +762,136 @@ function viewSchedule(){
     bind(){gantt.bind();}};
 }
 
+let techDetailWeek=0;   // selected week in the Technicians tab
+const ROLE_LABELS={any:'Any',bench:'Bench',line:'Line',support:'Support'};
+const CAT_LABELS={main:'Main line',bench:'Bench',tray:'Trays',support:'Support'};
+function viewTechs(){
+  const a=state.assumptions;
+  const k=result.kpi;
+  const nW=a.weeks;
+  const capPerTechWk=5*a.hoursPerDay*a.utilization*result.cal.ptoFactor;
+  // roster editor
+  const rosterRows=state.technicians.map((tech,i)=>{
+    const tt=result.techTotals[i]||{hours:0,util:0};
+    return `<tr>
+      <td class="num muted">${i+1}</td>
+      <td><input type="text" style="width:100%" data-tech="${i}:name" value="${esc(tech.name)}"></td>
+      <td><select data-tech="${i}:role">${Object.entries(ROLE_LABELS).map(([v,l])=>
+        `<option value="${v}" ${tech.role===v?'selected':''}>${l}</option>`).join('')}</select></td>
+      <td class="num">${hrs(tt.hours)}</td>
+      <td class="num">${Math.round(tt.util*100)}%</td>
+      <td><button class="small" data-techdel="${i}">✕</button></td></tr>`;
+  }).join('');
+  // tech x week load board
+  const head=Array.from({length:nW},(_,w)=>`<th class="num">${result.cal.weeks[w].label}</th>`).join('');
+  const board=state.technicians.map((tech,ti)=>{
+    const cells=Array.from({length:nW},(_,w)=>{
+      const c=result.techWeekly[ti][w];
+      const tot=c.main+c.bench+c.tray+c.support;
+      const ratio=Math.min(1,tot/Math.max(1,capPerTechWk));
+      const pct=Math.round(ratio*62);
+      return `<td class="num" data-cell="${ti}:${w}" style="background:color-mix(in srgb, var(--s1) ${pct}%, transparent)">${tot>0.05?hrs(tot):''}</td>`;
+    }).join('');
+    return `<tr><th style="white-space:nowrap">${esc(tech.name)}</th>${cells}</tr>`;
+  }).join('');
+  // weekly assignment detail, grouped by unit/work stream
+  const wkOpts=Array.from({length:nW},(_,w)=>`<option value="${w}" ${w===techDetailWeek?'selected':''}>wk ${w+1} · ${result.cal.weeks[w].label}</option>`).join('');
+  const ws=result.cal.weekStartEff(techDetailWeek),we=result.cal.weekEndEff(techDetailWeek);
+  const detail=state.technicians.map((tech,ti)=>{
+    const groups=new Map();
+    result.tasks.forEach(x=>{
+      if(x.tech!==ti||x.start==null)return;
+      const ov=Math.min(x.end,we)-Math.max(x.start,ws);
+      if(ov<=0.01)return;
+      const key=(x.unit?x.unit+' · ':'')+(x.unit?CAT_LABELS[x.cat]:x.label);
+      const g=groups.get(key)||{hours:0,n:0,cat:x.cat};
+      g.hours+=ov/60;g.n++;groups.set(key,g);
+    });
+    if(!groups.size)return '';
+    const items=[...groups.entries()].sort((p,q)=>q[1].hours-p[1].hours)
+      .map(([key,g])=>`<tr><td>${esc(tech.name)}</td><td>${esc(key)}</td><td>${CAT_LABELS[g.cat]}</td>
+        <td class="num">${g.n}</td><td class="num">${g.hours.toFixed(1)}</td></tr>`).join('');
+    return items;
+  }).join('');
+  return {html:alertsHtml()+`
+    <div class="card">
+      <h2>Technician roster — ${state.technicians.length} heads</h2>
+      <p class="sub">Name and role feed the scheduler: <b>Any</b> takes everything, <b>Bench</b> takes subassembly + trays,
+      <b>Line</b> takes main-line installs, <b>Support</b> takes recurring/chunk work + trays. Hours and utilization are
+      computed from the current schedule (${hrs(k.techHrsAvail)} effective h available per head incl. head start).</p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>#</th><th>Name</th><th>Role</th><th class="num">Assigned (h)</th><th class="num">Utilization</th><th></th></tr>
+        ${rosterRows}
+      </table></div>
+      <p class="sub" style="margin-top:10px"><button id="btn-add-tech" class="small">+ Add technician</button>
+      <button id="btn-export-assign" class="small">Export assignments CSV</button></p>
+    </div>
+    <div class="card">
+      <h2>Load board — hours per technician per week</h2>
+      <p class="sub">Fill depth = share of the ~${hrs(capPerTechWk)} effective h each tech has per week. Hover a cell for the work mix.</p>
+      <div class="tablewrap"><table class="data" id="tech-board" style="min-width:${140+nW*46}px">
+        <tr><th>Technician</th>${head}</tr>${board}
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>Week detail — who does what</h2>
+      <p class="sub">Assignments for <select id="tech-week">${wkOpts}</select> grouped by unit / work stream.</p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>Technician</th><th>Assignment</th><th>Type</th><th class="num">Tasks</th><th class="num">Hours</th></tr>
+        ${detail||'<tr><td colspan="5" class="muted">Nothing scheduled this week.</td></tr>'}
+      </table></div>
+    </div>`,
+    bind(){
+      document.querySelectorAll('[data-tech]').forEach(inp=>{
+        inp.addEventListener('change',()=>{
+          const [i,f]=inp.dataset.tech.split(':');
+          state.technicians[+i][f]=inp.value;
+          state.assumptions.techs=state.technicians.length;
+          commit();
+        });
+      });
+      document.querySelectorAll('[data-techdel]').forEach(b=>b.onclick=()=>{
+        state.technicians.splice(+b.dataset.techdel,1);
+        state.assumptions.techs=state.technicians.length;
+        commit();
+      });
+      $('#btn-add-tech').onclick=()=>{
+        state.technicians.push({name:'Tech '+(state.technicians.length+1),role:'any'});
+        state.assumptions.techs=state.technicians.length;
+        commit();
+      };
+      $('#btn-export-assign').onclick=exportAssignmentsCSV;
+      $('#tech-week').addEventListener('change',e=>{techDetailWeek=+e.target.value;render();});
+      const bd=$('#tech-board');
+      bd.addEventListener('mousemove',e=>{
+        const c=e.target.closest('[data-cell]');if(!c){hideTip();return;}
+        const [ti,w]=c.dataset.cell.split(':').map(Number);
+        const cell=result.techWeekly[ti][w];
+        const tot=cell.main+cell.bench+cell.tray+cell.support;
+        showTip(e,`<div class="t">${esc(state.technicians[ti].name)} — wk of ${result.cal.weeks[w].label}</div>
+          <div class="row"><span>Main line</span><b>${cell.main.toFixed(1)} h</b></div>
+          <div class="row"><span>Bench</span><b>${cell.bench.toFixed(1)} h</b></div>
+          <div class="row"><span>Trays</span><b>${cell.tray.toFixed(1)} h</b></div>
+          <div class="row"><span>Support</span><b>${cell.support.toFixed(1)} h</b></div>
+          <div class="row"><span>Total / available</span><b>${tot.toFixed(1)} / ${hrs(capPerTechWk)} h</b></div>`);
+      });
+      bd.addEventListener('mouseleave',hideTip);
+    }};
+}
+
+function exportAssignmentsCSV(){
+  const lines=[['technician','role','assignment','unit','category','start','end','hours'].join(',')];
+  result.tasks.forEach(x=>{
+    if(x.start==null||x.tech==null)return;
+    const tech=state.technicians[x.tech];
+    lines.push([csvq(tech?tech.name:'Tech '+(x.tech+1)),tech?tech.role:'any',csvq(x.label),
+      x.unit||'',x.cat,fmtISO(result.cal.effToDate(x.start)),fmtISO(result.cal.effToDate(Math.max(x.start,x.end-1e-6))),
+      (x.dur/60).toFixed(2)].join(','));
+  });
+  download('sliplift_tech_assignments.csv',lines.join('\n'),'text/csv');
+}
+function csvq(s){s=String(s);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+
 function viewPlan(){
   const a=state.assumptions;
   const perUnit=result.kpi.perUnitHrs;
@@ -741,6 +915,25 @@ function viewPlan(){
     <div class="card">
       <h2>Weekly build plan</h2>
       <p class="sub">Seeded from the demand forecast summary (42 SlipLifts, 75 heavy trays) — edit quantities; the schedule recomputes as you type. Each SlipLift ≈ ${perUnit.toFixed(1)} h, each tray ${a.trayHours} h. ${gapBtn}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;
+                  background:var(--surface-2);border:1px solid var(--ring);border-radius:8px;font-size:13px">
+        <b>Bulk edit:</b>
+        <span>weeks</span><input type="number" id="bulk-from" min="1" max="${a.weeks}" value="1" style="width:58px">
+        <span>to</span><input type="number" id="bulk-to" min="1" max="${a.weeks}" value="${a.weeks}" style="width:58px">
+        <select id="bulk-field">
+          <option value="slipLifts">SlipLifts</option>
+          <option value="heavyTrays">Heavy trays</option>
+          <option value="lightTrays">Light trays</option>
+        </select>
+        <select id="bulk-mode">
+          <option value="set">set to</option>
+          <option value="add">add</option>
+          <option value="scale">scale ×</option>
+        </select>
+        <input type="number" id="bulk-value" value="0" step="1" style="width:70px">
+        <button id="bulk-apply" class="primary small">Apply</button>
+        <span class="muted">e.g. weeks 1–8 · SlipLifts · set to 3</span>
+      </div>
       <div class="tablewrap"><table class="data">
         <tr><th>Week</th><th class="num">SlipLifts</th><th class="num">Heavy trays</th><th class="num">Light trays</th>
             <th class="num">Scheduled load (h)</th><th class="num">Capacity (h)</th><th>Fit</th></tr>
@@ -756,6 +949,17 @@ function viewPlan(){
           commit();
         });
       });
+      $('#bulk-apply').onclick=()=>{
+        const f=Math.max(1,Math.min(a.weeks,Math.round(+$('#bulk-from').value||1)))-1;
+        const t=Math.max(1,Math.min(a.weeks,Math.round(+$('#bulk-to').value||a.weeks)))-1;
+        const field=$('#bulk-field').value, mode=$('#bulk-mode').value, val=+$('#bulk-value').value||0;
+        for(let w=Math.min(f,t);w<=Math.max(f,t);w++){
+          const cur=state.buildPlan[w][field]||0;
+          const next=mode==='set'?val:mode==='add'?cur+val:cur*val;
+          state.buildPlan[w][field]=Math.max(0,Math.round(next));
+        }
+        commit();
+      };
       const gb=$('#btn-gap');
       if(gb)gb.onclick=()=>{
         const g=state.trayGap;
@@ -831,7 +1035,7 @@ function viewAssumptions(){
     <div class="card"><h2>Workforce &amp; calendar</h2>
       <p class="sub">Sources: headcount workbook (Jeff, 8/4/2026) and MBOM summary. Every value here is editable; the schedule recomputes immediately.</p>
       <div class="formgrid">
-        ${num('techs','Direct-labor technicians',1,1)}
+        ${num('techs','Direct-labor technicians (resizes roster)',1,1)}
         ${num('hoursPerDay','Hours per day per tech',0.5,1,16)}
         ${num('utilization','Direct-labor utilization (0–1)',0.01,0.3,1)}
         ${num('efficiency','Labor efficiency on MBOM times (0–1)',0.01,0.3,1)}
@@ -868,6 +1072,12 @@ function viewAssumptions(){
             const w=Math.max(4,Math.min(52,Math.round(a.weeks)));a.weeks=w;
             while(state.buildPlan.length<w)state.buildPlan.push({slipLifts:0,heavyTrays:0,lightTrays:0});
             state.buildPlan.length=w;
+            techDetailWeek=Math.min(techDetailWeek,w-1);
+          }
+          if(k==='techs'){
+            const n=Math.max(1,Math.min(60,Math.round(a.techs)));a.techs=n;
+            while(state.technicians.length<n)state.technicians.push({name:'Tech '+(state.technicians.length+1),role:'any'});
+            state.technicians.length=n;
           }
           commit();
         });
@@ -906,6 +1116,16 @@ function viewHelp(){
     same technician pool. The scheduler dispatches by earliest due date; MBOM touch times are divided by the
     labor-efficiency factor, and each workday is shrunk by utilization and pro-rated PTO. Weekends and the
     listed holidays are skipped.</p>
+    <h3>Technicians</h3>
+    <p>The Technicians tab holds the named roster the scheduler assigns work to. Each tech has a role —
+    <b>Any</b>, <b>Bench</b> (subassembly + trays), <b>Line</b> (main-line installs), or <b>Support</b>
+    (recurring/chunk work + trays) — and the dispatcher only hands a task to an eligible, free technician
+    (round-robin, so load spreads evenly). The load board shows hours per tech per week; the week detail
+    table lists each tech's assignments; <b>Export assignments CSV</b> produces the full task-level
+    assignment list for the MES.</p>
+    <h3>Bulk-editing the build plan</h3>
+    <p>Use the bulk-edit bar in the Build Plan tab to set, add to, or scale SlipLifts or trays across any
+    week range (e.g., weeks 1–8 SlipLifts set to 3), then fine-tune individual weeks in the table.</p>
     <h3>Reading the dashboard</h3>
     <p>The stacked chart is scheduled load; the dashed line is capacity. ▲ marks weeks where load exceeds
     capacity — the scheduler will push that work later, which is what makes units go red in the Schedule tab.

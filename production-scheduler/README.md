@@ -17,9 +17,14 @@ external dependencies, so it can be hosted anywhere and embedded directly in the
   91.6 h per SlipLift at 80 % efficiency).
 - **Bottleneck alerts.** Flags capacity shortfalls (heads), main-line station rate limits,
   bench-seat rate limits, late units, and the 26-tray forecast gap.
-- **Fully editable.** Build plan, operations, workforce, calendar, recurring load, and work
-  chunks are all editable in the UI; the schedule recomputes live (~150 ms). Edits persist in
-  the browser (localStorage), and scenarios can be shared via JSON export/import.
+- **Technician assignment.** A named roster with roles (Any / Bench / Line / Support); the
+  dispatcher assigns every task to a specific eligible technician round-robin. The Technicians
+  tab shows per-tech utilization, an hours-per-tech-per-week load board, a who-does-what week
+  detail, and a task-level assignments CSV export.
+- **Fully editable.** Build plan (including a bulk set/add/scale editor across any week range),
+  operations, roster, workforce, calendar, recurring load, and work chunks are all editable in
+  the UI; the schedule recomputes live (~150 ms). Edits persist in the browser (localStorage),
+  and scenarios can be shared via JSON export/import.
 - **MES hand-off.** `Export schedule CSV` produces a dispatch list (unit, bench start, line
   start, completion, on-time status) plus the weekly load/capacity table.
 
