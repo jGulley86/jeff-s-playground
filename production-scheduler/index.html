@@ -165,6 +165,7 @@ const SEED_DEPS=[
  ["Install lineside hydraulics F/B","Install Towing switches"]];
 const SEED_OPS=[[0,1,"install FR/ BL motor module",20,40,2,"M"],[0,2,"install FL/BR motor module",20,40,2,"M"],[0,3,"install scissor lift",45,180,4,"M"],[0,4,"install lift sensor assemblies",4,16,4,"M"],[0,5,"install/ route all cross-bot harnesses and cables",120,120,1,"M"],[0,6,"install hydraulic manifolds/ terminate and adjust manual release cables",4,8,2,"M"],[0,7,"Install lineside hydraulics F/B",120,240,2,"M"],[0,8,"install hall sensor wire retainers under chassis with lifts fully extened",5,20,4,"M"],[0,9,"install gas springs",10,40,4,"M"],[0,10,"Install Scissor lift top plate accessories",10,40,4,"M"],[0,11,"install computer carrier plate",5,5,1,"M"],[0,12,"install LOTO carrier plate",3,3,1,"M"],[0,13,"install safety carrier plate",3,3,1,"M"],[0,14,"install charge carrier plate",5,5,1,"M"],[0,15,"install aux battery carrier plate",25,25,1,"M"],[0,16,"install aux battery strikeplate cover",10,10,1,"M"],[0,17,"Install F/B spotlights",5,10,2,"M"],[0,18,"Install side spotlights",5,20,4,"M"],[0,19,"Install F camera",5,5,1,"M"],[0,20,"Install B camera",5,5,1,"M"],[0,21,"Install Towing switches",5,10,2,"M"],[0,22,"install F lidar",5,5,1,"M"],[0,23,"install B lidar",5,5,1,"M"],[0,24,"install L lidar",5,5,1,"M"],[0,25,"install R lidar",10,10,1,"M"],[0,26,"install FR/BL estops",7,14,2,"M"],[0,27,"install FL/BR estops",7,14,2,"M"],[0,28,"install middle estops",5,10,2,"M"],[0,29,"install FR LED assembly",1,2,2,"M"],[0,30,"install FL LED assembly",1,2,2,"M"],[0,31,"install RFID reader assembly",3,3,1,"M"],[0,32,"install GPS/ LTE antenna bracket",3,3,1,"M"],[0,33,"install grounding chain",2,2,1,"M"],[0,34,"install wall charger plug bracket",4,4,1,"M"],[0,35,"install batteries and wiring",75,75,1,"M"],[0,45,"install clipnut brackets and clipnuts for covers",20,20,1,"M"],[0,46,"install gasket tape for covers",45,45,1,"M"],[0,36,"Terminate Chassis Wiring to Computer Carrier Plate",100,100,1,"M"],[0,37,"Terminate Chassis Wiring to Aux Battery Carrier Plate",10,10,1,"M"],[0,38,"Terminate Chassis Wiring to LOTO Carrier Plate",40,40,1,"M"],[0,39,"Terminate Chassis Wiring to Charge Carrier Plate",20,20,1,"M"],[0,40,"Terminate Chassis Wiring to Safety Carrier Plate",20,20,1,"M"],[0,41,"Terminate Chassis Wiring at Front Hydraulic Bay",30,30,1,"M"],[0,42,"Terminate Chassis Wiring at Rear Hydraulic Bay",30,30,1,"M"],[0,43,"Complete Pre-Turn on Checks",10,10,1,"M"],[0,44,"Complete Post-Turn on Checks",120,120,1,"M"],[0,47,"Drop robot off of casters",30,30,1,"M"],[0,48,"Align and calibrate all LiDAR",45,45,1,"M"],[0,49,"Perform functional testing",180,180,1,"M"],[0,50,"install wheel fender covers",5,20,4,"M"],[0,51,"install F/B plastic end covers",15,30,2,"M"],[0,52,"install hydraulic cylinder covers",5,10,2,"M"],[0,53,"install large middle front cover",25,25,1,"M"],[0,54,"install large middle back cover",25,25,1,"M"],[0,55,"apply all decals",50,50,1,"M"],[1,1,"Assemble string potentiometer harness",20,80,1,"B"],[1,2,"Assemble Proximity sensor harness",7,28,1,"B"],[1,3,"assemble LED module",20,160,1,"B"],[1,4,"assemble aux battery limit switch harness",15,15,1,"B"],[1,5,"assemble spotlight harness",10,60,1,"B"],[1,6,"assemble motor harness",100,400,1,"B"],[1,7,"assemble DCV harness",25,50,1,"B"],[1,8,"assemble battery balancer harness",35,35,1,"B"],[1,9,"asssemble F LiDAR data harness",15,15,1,"B"],[1,10,"asssemble B LiDAR data harness",15,15,1,"B"],[1,11,"asssemble L LiDAR data harness",15,15,1,"B"],[1,12,"asssemble R LiDAR data harness",15,15,1,"B"],[1,13,"assemble F LiDAR power harness",10,10,1,"B"],[1,14,"assemble B LiDAR power harness",10,10,1,"B"],[1,15,"assemble L LiDAR power harness",10,10,1,"B"],[1,16,"assemble R LiDAR power harness",10,10,1,"B"],[1,17,"solder RFID Reader to headers",20,40,1,"B"],[2,1,"Assemble and flash jetson",30,60,1,"B"],[2,2,"Flash arduino uno and connect RFID reader",5,10,1,"B"],[2,3,"Flash Arduino OPTA",5,5,1,"B"],[2,4,"Flash Front Motor Controller",5,5,1,"B"],[2,5,"Flash Back Motor Controller",5,5,1,"B"],[2,6,"Flash Front LiDAR",5,5,1,"B"],[2,7,"Flash Back LiDAR",5,5,1,"B"],[2,8,"Flash Left LiDAR",5,5,1,"B"],[2,9,"Flash Right LiDAR",5,5,1,"B"],[2,10,"Flash F Camera",5,5,1,"B"],[2,11,"Flash B Camera",5,5,1,"B"],[2,12,"Asssemble, flash and test safety system",25,25,1,"B"],[2,13,"Configure output voltage on Orion DC/DC",10,10,1,"B"],[2,14,"Flash FORT VSC to Prod WES (tool)",10,10,1,"B"],[2,15,"Configure SVR1000",5,5,1,"B"],[2,16,"Flash Robot Xbee Controller",15,15,1,"B"],[2,17,"Assemble and configure router",15,15,1,"B"],[2,18,"Assemble and configure serial device hub",10,10,1,"B"],[3,1,"Assemble FL motor module assembly",75,150,1,"B"],[3,2,"Assemble FR motor module assembly",75,150,1,"B"],[3,3,"Assemble scissor lift assembly",65,260,1,"B"],[3,4,"Assemble computer carrier plate",180,180,1,"B"],[3,5,"Assemble LOTO carrier plate",60,60,1,"B"],[3,6,"Assemble safety carrier plate",25,25,1,"B"],[3,7,"Assemble charge carrier plate",20,20,1,"B"],[3,8,"Assemble aux battery carrier plate",110,110,1,"B"],[3,9,"Assemble HPU",5,10,1,"B"],[3,10,"Assemble hydraulic manifold",53,212,1,"B"],[3,11,"Assemble hydraulic cylinder",5,20,1,"B"],[4,1,"assemble FL/ BR Estop",3,6,1,"B"],[4,2,"assemble FR/BL Estop",3,6,1,"B"],[4,3,"assemble Middle estop",3,6,1,"B"],[4,4,"assemble F camera assembly",5,5,1,"B"],[4,5,"assemble B camera assembly",5,5,1,"B"],[4,6,"assemble towing switch assembly",3,6,1,"B"],[4,7,"assemble F LiDAR assembly",3,3,1,"B"],[4,8,"assemble B LiDAR assembly",3,3,1,"B"],[4,9,"assemble L LiDAR assembly",3,3,1,"B"],[4,10,"assemble R LiDAR assembly",3,3,1,"B"],[4,11,"assemble F/B spotlight assembly",10,20,1,"B"],[4,12,"assemble Side spotlight assembly",10,40,1,"B"],[4,13,"assemble FR/ BL LED assembly",5,10,1,"B"],[4,14,"assemble FL/ BR LED assembly",5,10,1,"B"],[4,15,"assemble RFID reader assembly",15,15,1,"B"],[4,16,"assemble lift sensors assembly",5,20,1,"B"],[4,17,"assemble aux batt strikeplate assembly",5,5,1,"B"]];
 
+const SEED_VERSION=4;   // bump when embedded seed data changes; stale saved states get an update banner
 function seedState(){
   const ops = SEED_OPS.map((r,i)=>({id:'op'+(i+1),phase:SEED_PHASES[r[0]],seq:r[1],name:r[2],
     minEach:r[3],minTotal:r[4],qty:r[5],type:r[6]}));
@@ -177,13 +178,15 @@ function seedState(){
   const plan=[]; for(let w=0;w<22;w++) plan.push({slipLifts:sl[w]||0,heavyTrays:ht[w]||0,lightTrays:lt[w]||0});
   return {
     version:1,
+    seedVersion:SEED_VERSION,
     assumptions:{
       horizonStart:'2026-08-03', weeks:22,
-      techs:7, hoursPerDay:7, otHoursPerDay:1, utilization:0.85, efficiency:0.80, ptoDays:5,
+      techs:7, hoursPerDay:7, otHoursPerDay:1, satHoursPerWeek:0, utilization:0.85, efficiency:0.80, ptoDays:5,
       stations:3, benchSeats:4, trayHours:10, binHours:40, requireBenchBeforeMain:true, leadWeeks:2,
-      mainMode:'dag', maxCrewPerRobot:2,
+      mainMode:'dag', maxCrewPerRobot:2, loadedRate:31.64,
       holidays:['2026-09-07','2026-11-26','2026-11-27','2026-12-24','2026-12-25','2026-12-31'],
     },
+    scenario:{addRobot:0,addTray:0,addAny:0,ot:null,sat:null,stations:null,bench:null,crew:null,util:null},
     // Customer orders per Master Production Plan (Demand Plan tab, as of 8/7/2026).
     // done* = % of that work stream already complete in NetSuite work orders (Summary tab).
     orders:[
@@ -228,6 +231,10 @@ function seedState(){
 }
 
 /* ============================== ENGINE ============================== */
+function orderCode(name){
+  const w=String(name||'').trim().split(/\s+/);
+  return (w.length>1?w.map(x=>x[0]).join(''):String(name||'X').slice(0,2)).toUpperCase().slice(0,3);
+}
 function parseISO(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
 function fmtISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fmtMD(d){return (d.getMonth()+1)+'/'+d.getDate();}
@@ -249,7 +256,9 @@ function buildCalendar(a){
     if(hol.has(fmtISO(d))) continue;
     days.push(d);
   }
-  const hpd=a.hoursPerDay+(a.otHoursPerDay||0);            // attended hours/day incl. standing OT
+  // attended hours/day incl. standing OT; Saturday hours are spread across the 5 weekdays
+  // (an approximation that keeps the calendar uniform — capacity is exact, day-of-week isn't)
+  const hpd=a.hoursPerDay+(a.otHoursPerDay||0)+(a.satHoursPerWeek||0)/5;
   const workdaysInHorizon=days.filter(d=>d>=start&&(d-start)/864e5<horizonDays).length;
   const workdayHours=workdaysInHorizon*hpd;
   const ptoFactor=Math.max(0.01,1-(a.ptoDays*hpd)/Math.max(1,workdayHours));
@@ -325,10 +334,6 @@ function buildTasks(st,cal){
       prev=id;
     });
   }
-  const orderCode=name=>{
-    const w=String(name||'').trim().split(/\s+/);
-    return (w.length>1?w.map(x=>x[0]).join(''):String(name||'X').slice(0,2)).toUpperCase().slice(0,3);
-  };
   // Customer orders: hard due dates (handoff), progress-adjusted remaining work
   (st.orders||[]).forEach(o=>{
     if(!o.handoff)return;
@@ -631,6 +636,7 @@ function loadState(){
         if(!Array.isArray(s.dependencies))
           s.dependencies=SEED_DEPS.map(d=>({before:d[0],after:d[1]}));
         if(!Array.isArray(s.orders))s.orders=[];   // no orders injected into an edited plan — Reset to get the seed set
+        if(!s.scenario)s.scenario={addRobot:0,addTray:0,addAny:0,ot:null,sat:null,stations:null,bench:null,crew:null,util:null};
         return s;
       }
     }
@@ -639,7 +645,7 @@ function loadState(){
 }
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 function recompute(){result=runSchedule(state);}
-function commit(){saveState();recompute();render();}
+function commit(){saveState();recompute();scenResult=null;scenHires=null;render();}
 
 /* ============================== UI HELPERS ============================== */
 const $=s=>document.querySelector(s);
@@ -753,6 +759,14 @@ function chartGantt(res,st){
       g+=`<text x="${xx+2}" y="${mT-10}">${res.cal.weeks[w].label}</text>`;
   }
   if(lead>0)g+=`<text x="${mL+2}" y="${mT-10}">head start</text>`;
+  // order handoff milestones
+  (st.orders||[]).forEach(o=>{
+    if(!o.handoff)return;
+    const xe=x(res.cal.dateToEff(addDays(parseISO(o.handoff),1)));
+    if(xe<=mL||xe>=mL+iw)return;
+    g+=`<line x1="${xe}" y1="${mT-6}" x2="${xe}" y2="${H-mB}" stroke="var(--s2)" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+    g+=`<text x="${xe+3}" y="${mT+2}" fill="var(--s2)" font-weight="600">${esc(orderCode(o.name))}</text>`;
+  });
   units.forEach((u,i)=>{
     const yy=mT+i*rowH;
     const yc=yy+rowH/2;
@@ -786,7 +800,7 @@ function chartGantt(res,st){
 
 /* ============================== VIEWS ============================== */
 const TABS=[['dashboard','Dashboard'],['schedule','Schedule'],['techs','Technicians'],['plan','Build Plan'],
-  ['ops','Operations'],['assumptions','Assumptions'],['help','Help']];
+  ['ops','Operations'],['scenario','Scenario'],['assumptions','Assumptions'],['help','Help']];
 
 function render(){
   $('#tabs').innerHTML=TABS.map(([id,l])=>
@@ -794,9 +808,19 @@ function render(){
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{activeTab=b.dataset.tab;render();});
   const a=state.assumptions;
   $('#hdr-sub').textContent=`SLIP Robotics · ${a.weeks} weeks from ${fmtMD(parseISO(a.horizonStart))} · ${state.technicians.length} techs · finite-capacity schedule`;
-  const v={dashboard:viewDashboard,schedule:viewSchedule,techs:viewTechs,plan:viewPlan,ops:viewOps,assumptions:viewAssumptions,help:viewHelp}[activeTab];
+  const v={dashboard:viewDashboard,schedule:viewSchedule,techs:viewTechs,plan:viewPlan,ops:viewOps,scenario:viewScenario,assumptions:viewAssumptions,help:viewHelp}[activeTab];
   const out=v();
-  $('#main').innerHTML=out.html;
+  const stale=(state.seedVersion||0)<SEED_VERSION;
+  const banner=stale?`<div class="alert warn" style="margin-bottom:16px">
+    <span class="tag">Data update</span>
+    <span>This page ships newer seed data (customer orders + Master Production Plan crew/calendar) than your saved plan.
+    <button id="btn-seed-load" class="primary small" style="margin:0 6px">Load latest seed</button>
+    <button id="btn-seed-keep" class="small">Keep my edits</button></span></div>`:'';
+  $('#main').innerHTML=banner+out.html;
+  if(stale){
+    $('#btn-seed-load').onclick=()=>{state=seedState();commit();};
+    $('#btn-seed-keep').onclick=()=>{state.seedVersion=SEED_VERSION;saveState();render();};
+  }
   (out.bind||(()=>{}))();
 }
 
@@ -856,12 +880,35 @@ function viewDashboard(){
       <div class="value">${Math.round(k.utilizationOfPool*100)}<small>%</small></div>
       <div class="note">of effective hours in horizon</div></div>
   </div>`;
+  const orderRows=(state.orders||[]).map(o=>{
+    const uu=result.units.filter(x=>x.order===o.name);
+    const tt=result.tasks.filter(x=>!x.unit&&x.order===o.name);
+    const all=result.tasks.filter(x=>x.order===o.name);
+    if(!all.length)return '';
+    const remHrs=all.reduce((s,x)=>s+x.dur,0)/60;
+    let lastEnd=0;all.forEach(x=>{if(x.start!=null)lastEnd=Math.max(lastEnd,x.end);});
+    const finish=lastEnd?result.cal.effToDate(lastEnd-1e-6):null;
+    const lateN=uu.filter(x=>x.late).length+tt.filter(x=>x.start!=null&&x.end>x.due+1e-6).length;
+    const hd=parseISO(o.handoff);
+    const chip=lateN?`<span class="chip late">${lateN} late</span>`
+      :(finish&&finish>hd?'<span class="chip late">misses handoff</span>':'<span class="chip ok">on track</span>');
+    const scope=[o.slipLifts?o.slipLifts+' SL':'',o.heavyTrays?o.heavyTrays+' HT':'',o.bins?o.bins+' bins':''].filter(Boolean).join(' + ');
+    return `<tr><td><b>${esc(o.name)}</b></td><td>${scope}</td><td class="num">${hrs(remHrs)}</td>
+      <td>${fmtMD(hd)}</td><td>${finish?fmtMD(finish):'—'}</td><td>${chip}</td></tr>`;
+  }).join('');
+  const orderCard=orderRows?`
+  <div class="card"><h2>Customer order fulfillment</h2>
+  <p class="sub">Remaining work only (order % complete applied). Projected finish is the scheduler's completion of the order's last open item.</p>
+  <div class="tablewrap"><table class="data">
+    <tr><th>Order</th><th>Open scope</th><th class="num">Hrs left</th><th>Handoff</th><th>Projected finish</th><th>Status</th></tr>
+    ${orderRows}
+  </table></div></div>`:'';
   const sens=`
   <div class="card"><h2>Sensitivity — headcount vs. direct-labor utilization</h2>
   <p class="sub">Total demand ${hrs(k.demandHrs)} h over ${a.weeks} weeks; holidays and PTO as configured.</p>
   <div class="tablewrap"><table class="data"><tr><th>Utilization</th>${k.sensitivity.map(s=>`<th class="num">${Math.round(s.util*100)}%</th>`).join('')}</tr>
   <tr><td>Heads required</td>${k.sensitivity.map(s=>`<td class="num">${s.heads}${s.util===a.utilization?' ◀':''}</td>`).join('')}</tr></table></div></div>`;
-  return {html:alertsHtml()+kpis+`
+  return {html:alertsHtml()+kpis+orderCard+`
     <div class="card">
       <h2>Weekly load vs. capacity</h2>
       <p class="sub">Effective hours (utilization ${Math.round(a.utilization*100)}%, PTO spread, holidays out). Dashed line = ${k.nTech}-tech capacity; ▲ = overloaded week.</p>
@@ -1069,8 +1116,10 @@ function viewPlan(){
             <th>Handoff</th><th class="num">SL % done</th><th class="num">HT % done</th><th>Status</th><th></th></tr>
         ${(state.orders||[]).map((o,i)=>{
           const u=result.units.filter(x=>x.order===o.name);
-          const lateN=u.filter(x=>x.late).length;
-          const chip=u.length?(lateN?`<span class="chip late">${lateN} late</span>`:'<span class="chip ok">on time</span>'):'<span class="chip tight">no units</span>';
+          const tt=result.tasks.filter(x=>!x.unit&&x.order===o.name);
+          const lateN=u.filter(x=>x.late).length+tt.filter(x=>x.start!=null&&x.end>x.due+1e-6).length;
+          const total=u.length+tt.length;
+          const chip=total?(lateN?`<span class="chip late">${lateN} late</span>`:'<span class="chip ok">on time</span>'):'<span class="chip tight">nothing open</span>';
           return `<tr>
           <td><input type="text" style="width:130px" data-ord="${i}:name" value="${esc(o.name)}"></td>
           <td class="num"><input type="number" min="0" style="width:60px" data-ord="${i}:slipLifts" value="${o.slipLifts||0}"></td>
@@ -1253,6 +1302,147 @@ function viewOps(){
     }};
 }
 
+/* ---------- Scenario planner ---------- */
+let scenResult=null, scenHires=null;
+function applyScenario(base,sc){
+  const st=JSON.parse(JSON.stringify(base));
+  for(let i=0;i<(sc.addRobot||0);i++)st.technicians.push({name:'New hire (SlipLift) '+(i+1),role:'robot'});
+  for(let i=0;i<(sc.addTray||0);i++)st.technicians.push({name:'New hire (Tray) '+(i+1),role:'tray'});
+  for(let i=0;i<(sc.addAny||0);i++)st.technicians.push({name:'New hire '+(i+1),role:'any'});
+  st.assumptions.techs=st.technicians.length;
+  if(sc.ot!=null)st.assumptions.otHoursPerDay=sc.ot;
+  if(sc.sat!=null)st.assumptions.satHoursPerWeek=sc.sat;
+  if(sc.stations!=null)st.assumptions.stations=sc.stations;
+  if(sc.bench!=null)st.assumptions.benchSeats=sc.bench;
+  if(sc.crew!=null)st.assumptions.maxCrewPerRobot=sc.crew;
+  if(sc.util!=null)st.assumptions.utilization=sc.util;
+  return st;
+}
+function scenarioActive(sc){
+  return (sc.addRobot||0)+(sc.addTray||0)+(sc.addAny||0)>0||sc.ot!=null||sc.sat!=null
+    ||sc.stations!=null||sc.bench!=null||sc.crew!=null||sc.util!=null;
+}
+function viewScenario(){
+  const a=state.assumptions;
+  const sc=state.scenario;
+  const active=scenarioActive(sc);
+  if(active&&!scenResult)scenResult=runSchedule(applyScenario(state,sc));
+  const b=result.kpi, s=scenResult?scenResult.kpi:null;
+  const rate=a.loadedRate||31.64;
+  const addHeads=(sc.addRobot||0)+(sc.addTray||0)+(sc.addAny||0);
+  const hireCost=addHeads*40*a.weeks*rate;
+  const otWk=((sc.ot!=null?sc.ot:a.otHoursPerDay)*5+(sc.sat!=null?sc.sat:a.satHoursPerWeek||0))
+            -((a.otHoursPerDay||0)*5+(a.satHoursPerWeek||0));
+  const otCost=Math.max(0,otWk)*(b.nTech)*a.weeks*rate*1.5;
+  const num=(k,v,ph)=>`<label>${v}<input type="number" data-sc="${k}" placeholder="${ph}" value="${sc[k]==null?'':sc[k]}" step="${k==='util'?0.01:(k==='sat'||k==='ot'?0.5:1)}" min="0"></label>`;
+  const add=(k,v)=>`<label>${v}<input type="number" data-sc="${k}" value="${sc[k]||0}" step="1" min="0" max="12"></label>`;
+  function row(label,bv,sv,fmt,goodWhenLower){
+    fmt=fmt||(x=>x);
+    let delta='';
+    if(s!=null&&typeof bv==='number'&&typeof sv==='number'&&Math.abs(sv-bv)>1e-9){
+      const better=goodWhenLower?sv<bv:sv>bv;
+      delta=` <span class="${better?'up':'down'}" style="color:var(${better?'--good-text':'--crit-text'})">${sv>bv?'▲':'▼'}${fmt(Math.abs(sv-bv))}</span>`;
+    }
+    return `<tr><td>${label}</td><td class="num">${typeof bv==='number'?fmt(bv):bv}</td>
+      <td class="num">${s==null?'—':(typeof sv==='number'?fmt(sv):sv)}${delta}</td></tr>`;
+  }
+  const d1=x=>typeof x==='number'?x.toFixed(0):x;
+  const baseLast=b.lastUnit&&b.lastUnit.finishDate?fmtMD(b.lastUnit.finishDate):'—';
+  const scenLast=s&&s.lastUnit&&s.lastUnit.finishDate?fmtMD(s.lastUnit.finishDate):'—';
+  const orderCmp=(state.orders||[]).map(o=>{
+    const lateIn=res=>res.units.filter(x=>x.order===o.name&&x.late).length
+      +res.tasks.filter(x=>!x.unit&&x.order===o.name&&x.start!=null&&x.end>x.due+1e-6).length;
+    return row(esc(o.name)+' items late',lateIn(result),s?lateIn(scenResult):0,d1,true);
+  }).join('');
+  const hiresHtml=scenHires===null?'':(scenHires.n===0
+    ?`<p class="sub">Even +8 flexible hires can't clear every due date — a structural constraint (stations, bench seats, or an order date) binds. Try levers above.</p>`
+    :`<p class="sub"><b>${scenHires.n} flexible hire${scenHires.n>1?'s':''}</b> clears every due date (last unit ${scenHires.last}).
+      BOY cost ≈ <b>$${hrs(scenHires.cost)}</b> at $${rate}/h loaded (40 h/wk × ${a.weeks} wks).
+      Covering today's ${hrs(Math.max(0,b.demandHrs-b.capacityHrs))} h shortfall with 1.5× OT instead ≈ $${hrs(Math.max(0,b.demandHrs-b.capacityHrs)*rate*1.5)} —
+      but that's ${(Math.max(0,b.demandHrs-b.capacityHrs)/a.weeks/b.nTech).toFixed(1)} extra h/head/wk on top of the standing OT.</p>`);
+  return {html:alertsHtml()+`
+    <div class="card">
+      <h2>Scenario levers</h2>
+      <p class="sub">Blank = keep current value. The scenario reruns the full schedule — nothing here changes your saved plan.</p>
+      <div class="formgrid">
+        ${add('addRobot','+ SlipLift-line hires')}
+        ${add('addTray','+ Heavy-tray hires')}
+        ${add('addAny','+ Flexible hires (any work)')}
+        ${num('ot','OT hours/day/person',a.otHoursPerDay)}
+        ${num('sat','Saturday hours/week/person',a.satHoursPerWeek||0)}
+        ${num('stations','Main-line stations',a.stations)}
+        ${num('bench','Bench seats',a.benchSeats)}
+        ${num('crew','Max techs per robot',a.maxCrewPerRobot)}
+        ${num('util','Utilization override (0–1)',a.utilization)}
+        <label>Loaded labor rate ($/h)<input type="number" data-a-rate="1" value="${rate}" step="0.01" min="1"></label>
+      </div>
+      <p class="sub" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button id="sc-hires" class="primary small">Find minimal hires to hit every date</button>
+        <button id="sc-actual" class="small">Preset: recent actual pace (util 51%)</button>
+        <button id="sc-clear" class="small">Clear scenario</button>
+      </p>
+      ${hiresHtml}
+    </div>
+    <div class="card">
+      <h2>Baseline vs. scenario</h2>
+      <p class="sub">${active?'Scenario applies: '+[
+        (sc.addRobot||0)?`+${sc.addRobot} SlipLift`:'',(sc.addTray||0)?`+${sc.addTray} tray`:'',(sc.addAny||0)?`+${sc.addAny} flexible`:'',
+        sc.ot!=null?`OT ${sc.ot}h/d`:'',sc.sat!=null?`Sat ${sc.sat}h/wk`:'',sc.stations!=null?`${sc.stations} stations`:'',
+        sc.bench!=null?`${sc.bench} bench seats`:'',sc.crew!=null?`crew ${sc.crew}`:'',sc.util!=null?`util ${Math.round(sc.util*100)}%`:''
+      ].filter(Boolean).join(' · '):'Set a lever above to compare.'}</p>
+      <div class="tablewrap"><table class="data">
+        <tr><th>Metric</th><th class="num">Baseline</th><th class="num">Scenario</th></tr>
+        ${row('SlipLifts late',b.lateUnits,s?s.lateUnits:0,d1,true)}
+        ${row('Last SlipLift completes',baseLast,scenLast)}
+        ${row('Technicians',b.nTech,s?s.nTech:0,d1,false)}
+        ${row('Capacity (h)',b.capacityHrs,s?s.capacityHrs:0,d1,false)}
+        ${row('Demand − capacity (h)',b.demandHrs-b.capacityHrs,s?s.demandHrs-s.capacityHrs:0,d1,true)}
+        ${row('Tech pool utilization (%)',b.utilizationOfPool*100,s?s.utilizationOfPool*100:0,x=>x.toFixed(0),true)}
+        ${orderCmp}
+      </table></div>
+      ${active&&addHeads?`<p class="sub">Scenario hire cost ≈ <b>$${hrs(hireCost)}</b> BOY (${addHeads} × 40 h/wk × ${a.weeks} wks × $${rate}/h).${otWk>0?` Added OT/Sat cost ≈ $${hrs(otCost)} at 1.5×.`:''}</p>`:''}
+    </div>`,
+    bind(){
+      document.querySelectorAll('[data-sc]').forEach(inp=>{
+        inp.addEventListener('change',()=>{
+          const k=inp.dataset.sc;
+          if(k==='addRobot'||k==='addTray'||k==='addAny')sc[k]=Math.max(0,Math.round(+inp.value||0));
+          else sc[k]=inp.value===''?null:Math.max(0,+inp.value);
+          scenResult=scenarioActive(sc)?runSchedule(applyScenario(state,sc)):null;
+          scenHires=null;saveState();render();
+        });
+      });
+      document.querySelector('[data-a-rate]').addEventListener('change',e=>{
+        state.assumptions.loadedRate=Math.max(1,+e.target.value||31.64);saveState();render();
+      });
+      $('#sc-clear').onclick=()=>{
+        state.scenario={addRobot:0,addTray:0,addAny:0,ot:null,sat:null,stations:null,bench:null,crew:null,util:null};
+        scenResult=null;scenHires=null;saveState();render();
+      };
+      $('#sc-actual').onclick=()=>{
+        // MPP Capacity Plan: team converts ~36% of theoretical capacity vs 60% design ->
+        // equivalent all-work utilization ~ 0.85 * 36/60 = 0.51
+        sc.util=0.51;scenResult=runSchedule(applyScenario(state,sc));scenHires=null;saveState();render();
+      };
+      $('#sc-hires').onclick=()=>{
+        let found=null;
+        for(let n=1;n<=8;n++){
+          const trial=JSON.parse(JSON.stringify(state.scenario));
+          trial.addAny=(trial.addAny||0)+n;
+          const r=runSchedule(applyScenario(state,trial));
+          if(r.kpi.lateUnits===0&&r.kpi.unscheduled===0){
+            const lu=r.kpi.lastUnit;
+            found={n:(trial.addAny),last:lu&&lu.finishDate?fmtMD(lu.finishDate):'—',
+              cost:trial.addAny*40*state.assumptions.weeks*(state.assumptions.loadedRate||31.64)};
+            break;
+          }
+        }
+        scenHires=found||{n:0};
+        render();
+      };
+    }};
+}
+
 function viewAssumptions(){
   const a=state.assumptions;
   const num=(k,v,step,min,max)=>`<label>${v}<input type="number" step="${step}" min="${min}" ${max?`max="${max}"`:''} data-a="${k}" value="${a[k]}"></label>`;
@@ -1273,6 +1463,7 @@ function viewAssumptions(){
         ${num('techs','Direct-labor technicians (resizes roster)',1,1)}
         ${num('hoursPerDay','Straight-time hours per day per tech',0.5,1,16)}
         ${num('otHoursPerDay','Standing OT hours per day per person',0.5,0,8)}
+        ${num('satHoursPerWeek','Saturday hours per week per person',0.5,0,12)}
         ${num('binHours','Man-hours per bin',1,0)}
         ${num('utilization','Direct-labor utilization (0–1)',0.01,0.3,1)}
         ${num('efficiency','Labor efficiency on MBOM times (0–1)',0.01,0.3,1)}
@@ -1369,6 +1560,12 @@ function viewHelp(){
     <h3>Bulk-editing the build plan</h3>
     <p>Use the bulk-edit bar in the Build Plan tab to set, add to, or scale SlipLifts or trays across any
     week range (e.g., weeks 1–8 SlipLifts set to 3), then fine-tune individual weeks in the table.</p>
+    <h3>Scenario planner</h3>
+    <p>The Scenario tab reruns the whole schedule with what-if levers — hires by line, OT, Saturday hours,
+    stations, bench seats, crew size, or a utilization override — without touching your saved plan, and shows
+    baseline-vs-scenario deltas per order. "Find minimal hires" searches for the smallest flexible-hire count that
+    clears every due date and prices it against 1.5× overtime at your loaded rate. The "recent actual pace" preset
+    applies the ~51% utilization implied by the team's measured earned-rate (36% of theoretical vs 60% design).</p>
     <h3>Reading the dashboard</h3>
     <p>The stacked chart is scheduled load; the dashed line is capacity. ▲ marks weeks where load exceeds
     capacity — the scheduler will push that work later, which is what makes units go red in the Schedule tab.

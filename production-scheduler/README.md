@@ -29,8 +29,15 @@ external dependencies, so it can be hosted anywhere and embedded directly in the
   operations, roster, workforce, calendar, recurring load, and work chunks are all editable in
   the UI; the schedule recomputes live (~150 ms). Edits persist in the browser (localStorage),
   and scenarios can be shared via JSON export/import.
-- **MES hand-off.** `Export schedule CSV` produces a dispatch list (unit, bench start, line
-  start, completion, on-time status) plus the weekly load/capacity table.
+- **Scenario planner.** What-if levers (hires by line, OT, Saturday hours, stations, bench
+  seats, crew size, utilization override) rerun the full schedule without touching the saved
+  plan and show baseline-vs-scenario deltas per order. A "find minimal hires" solver locates
+  the smallest flexible-hire count that clears every due date and prices it against 1.5×
+  overtime at the loaded labor rate; a preset applies the measured ~51% actual-pace utilization.
+- **MES hand-off.** `Export schedule CSV` produces a dispatch list (unit, order, due date,
+  bench start, line start, completion, on-time status) plus the weekly load/capacity table.
+- **Seed-version banner.** When the embedded seed data is updated, saved browser states get a
+  one-click "Load latest seed / Keep my edits" banner instead of silently going stale.
 
 ## Data sources (seeded into the file)
 
