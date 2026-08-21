@@ -29,6 +29,11 @@ external dependencies, so it can be hosted anywhere and embedded directly in the
   operations, roster, workforce, calendar, recurring load, and work chunks are all editable in
   the UI; the schedule recomputes live (~150 ms). Edits persist in the browser (localStorage),
   and scenarios can be shared via JSON export/import.
+- **Work-in-progress tracking.** In-flight units carry their exact remaining planned hours
+  from NetSuite work orders (seeded from the Master Production Plan's Weekly Capacity sheet,
+  8/7/2026) and replace fresh units of their orders. Refresh by pasting rows from the
+  `Weekly Capacity` or `Work Orders` sheet — the importer auto-detects either format,
+  aggregates op rows per unit, and matches customers to orders.
 - **Scenario planner.** What-if levers (hires by line, OT, Saturday hours, stations, bench
   seats, crew size, utilization override) rerun the full schedule without touching the saved
   plan and show baseline-vs-scenario deltas per order. A "find minimal hires" solver locates
