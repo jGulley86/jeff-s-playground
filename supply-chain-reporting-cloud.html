@@ -1,0 +1,608 @@
+<title>Where Does Supply Chain Report?</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+
+<style>
+  :root {
+    --ground: #ebeef1;
+    --sheet: #ffffff;
+    --sheet-2: #f5f7f9;
+    --ink: #151a1f;
+    --ink-2: #4c565f;
+    --ink-3: #7c868f;
+    --rule: #ccd4da;
+    --rule-strong: #96a2ab;
+    --grid: #dbe2e7;
+    --steel: #2f6690;
+    --teal: #1f6b62;
+    --tension: #a6392b;
+    --tension-wash: #f8ebe8;
+
+    --sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #101418;
+      --sheet: #191f24;
+      --sheet-2: #1f262c;
+      --ink: #e7ecf0;
+      --ink-2: #a2adb6;
+      --ink-3: #78838d;
+      --rule: #2d353c;
+      --rule-strong: #4a5661;
+      --grid: #232b31;
+      --steel: #74acd2;
+      --teal: #56b5a8;
+      --tension: #e5735e;
+      --tension-wash: #33201c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #101418;
+    --sheet: #191f24;
+    --sheet-2: #1f262c;
+    --ink: #e7ecf0;
+    --ink-2: #a2adb6;
+    --ink-3: #78838d;
+    --rule: #2d353c;
+    --rule-strong: #4a5661;
+    --grid: #232b31;
+    --steel: #74acd2;
+    --teal: #56b5a8;
+    --tension: #e5735e;
+    --tension-wash: #33201c;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    padding: 32px 20px 72px;
+  }
+
+  .sheet {
+    max-width: 1128px;
+    margin: 0 auto;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    box-shadow: 0 1px 0 var(--rule);
+  }
+
+  /* ─── title block ─── */
+
+  .titleblock {
+    display: grid;
+    grid-template-columns: 1fr 232px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .tb-main { padding: 30px 34px 28px; }
+  .tb-side {
+    border-left: 1px solid var(--rule);
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+  }
+
+  .tb-cell {
+    padding: 11px 18px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tb-cell + .tb-cell { border-top: 1px solid var(--rule); }
+
+  .tb-key {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--ink-3);
+  }
+  .tb-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.17em;
+    color: var(--ink-3);
+    margin-bottom: 16px;
+  }
+  .eyebrow b { color: var(--tension); font-weight: 500; }
+
+  h1 {
+    font-family: var(--sans);
+    font-size: clamp(30px, 4.6vw, 47px);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.04;
+    text-wrap: balance;
+    max-width: 22ch;
+  }
+  .standfirst {
+    margin-top: 15px;
+    max-width: 60ch;
+    color: var(--ink-2);
+    font-size: 16.5px;
+  }
+
+  /* ─── figure ─── */
+
+  .figwrap {
+    padding: 30px 34px 26px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .figscroll { overflow-x: auto; }
+  figure svg {
+    display: block;
+    width: 100%;
+    min-width: 760px;
+    height: auto;
+  }
+  figcaption {
+    margin-top: 18px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+    max-width: 74ch;
+  }
+  figcaption code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink);
+  }
+
+  /* svg internals */
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .frame { stroke: var(--rule); stroke-width: 1; }
+  .tick { stroke: var(--rule-strong); stroke-width: 1.6; fill: none; }
+  .box { fill: var(--sheet); stroke: var(--rule-strong); stroke-width: 1; }
+  .hair { stroke: var(--rule); stroke-width: 1; }
+  .edge { stroke: var(--rule-strong); stroke-width: 1.6; fill: none; }
+  .edge-t { stroke: var(--tension); stroke-width: 1.8; fill: none; }
+  .ah { fill: var(--rule-strong); }
+  .ah-t { fill: var(--tension); }
+  .plate { fill: var(--sheet); }
+  .plate-t { fill: var(--tension-wash); stroke: var(--tension); stroke-width: 1; }
+  .b-code { font: 600 19px var(--mono); }
+  .b-eye { font: 500 9.5px var(--mono); letter-spacing: 0.15em; }
+  .b-body { font: 500 14.5px var(--sans); fill: var(--ink); }
+  .b-note { font: 400 11px var(--mono); fill: var(--ink-3); }
+  .e-code { font: 600 11.5px var(--mono); fill: var(--ink-2); letter-spacing: 0.05em; }
+  .c-code { font: 600 11.5px var(--mono); fill: var(--tension); letter-spacing: 0.09em; }
+  .c-body { font: 500 12.5px var(--sans); fill: var(--tension); }
+  .s1 { fill: var(--steel); }
+  .s2 { fill: var(--teal); }
+
+  /* ─── read aloud ─── */
+
+  .read {
+    padding: 34px 34px 36px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--sheet-2);
+  }
+  .prongs {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 68ch;
+  }
+  .prong {
+    font-size: 19px;
+    line-height: 1.5;
+    padding-left: 20px;
+    border-left: 3px solid var(--rule-strong);
+  }
+  .prong-1 { border-left-color: var(--steel); }
+  .prong-2 { border-left-color: var(--teal); }
+  .pl {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .prong strong { font-weight: 600; }
+  .prong-1 strong { color: var(--steel); }
+  .prong-2 strong { color: var(--teal); }
+
+  .verdict {
+    margin-top: 26px;
+    font-family: var(--sans);
+    font-size: clamp(26px, 3.4vw, 38px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--tension);
+  }
+
+  /* ─── assumption audit ─── */
+
+  .audit { padding: 34px 34px 10px; }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+  }
+  h2 {
+    font-family: var(--sans);
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+  .sec-note {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 178px 1fr;
+    gap: 8px 26px;
+    padding: 20px 0 22px;
+    border-top: 1px solid var(--rule);
+  }
+  .row-weak {
+    border-top-color: var(--tension);
+    box-shadow: inset 3px 0 0 var(--tension);
+    padding-left: 18px;
+    margin-left: -18px;
+    background: linear-gradient(90deg, var(--tension-wash), transparent 62%);
+  }
+
+  .row-key { padding-top: 2px; }
+  .rk-code {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .rk-1 { color: var(--steel); }
+  .rk-2 { color: var(--teal); }
+  .rk-x { color: var(--tension); }
+  .rk-gloss {
+    display: block;
+    margin-top: 5px;
+    font-size: 14px;
+    line-height: 1.42;
+    color: var(--ink-3);
+    max-width: 24ch;
+  }
+
+  ol.becauses {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    max-width: 66ch;
+  }
+  ol.becauses li {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 10px;
+    font-size: 16.5px;
+    line-height: 1.5;
+  }
+  .num {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-3);
+    padding-top: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .becauses em {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+  }
+  .tag {
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: 2px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--sheet);
+    background: var(--tension);
+    padding: 2px 7px 1px;
+  }
+  .weak-txt { font-weight: 600; }
+
+  /* ─── weakest ─── */
+
+  .weakest {
+    margin: 24px 34px 0;
+    border-top: 1px solid var(--rule);
+    padding: 30px 0 34px;
+    display: grid;
+    grid-template-columns: 178px 1fr;
+    gap: 8px 26px;
+  }
+  .wk-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: var(--tension);
+    padding-top: 8px;
+  }
+  .wk-claim {
+    font-family: var(--sans);
+    font-size: clamp(21px, 2.7vw, 30px);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.18;
+    text-wrap: balance;
+    max-width: 30ch;
+  }
+  .wk-cite {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--tension);
+    margin-bottom: 12px;
+  }
+  .wk-note {
+    margin-top: 16px;
+    max-width: 60ch;
+    font-size: 16px;
+    color: var(--ink-2);
+  }
+
+  footer {
+    max-width: 1128px;
+    margin: 14px auto 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 760px) {
+    body { padding: 16px 12px 48px; }
+    .titleblock { grid-template-columns: 1fr; }
+    .tb-side { border-left: 0; border-top: 1px solid var(--rule); grid-template-rows: none; }
+    .tb-main, .figwrap, .read, .audit { padding-left: 20px; padding-right: 20px; }
+    .weakest { margin-left: 20px; margin-right: 20px; }
+    .row, .weakest { grid-template-columns: 1fr; }
+    .rk-gloss { max-width: 46ch; }
+    .row-weak { margin-left: -12px; padding-left: 12px; }
+  }
+</style>
+
+<main class="sheet">
+
+  <div class="titleblock">
+    <div class="tb-main">
+      <p class="eyebrow">EVAPORATING CLOUD &nbsp;·&nbsp; CONFLICT RESOLUTION DIAGRAM &nbsp;·&nbsp; <b>UNRESOLVED</b></p>
+      <h1>Where does Supply&nbsp;Chain report?</h1>
+      <p class="standfirst">Two needs, both real, both serving the same objective — pulling toward two org structures that cannot coexist. The diagram below is the argument; the audit below that is where it breaks.</p>
+    </div>
+    <div class="tb-side">
+      <div class="tb-cell"><span class="tb-key">DATE</span><span class="tb-val">8/21</span></div>
+      <div class="tb-cell"><span class="tb-key">OWNER</span><span class="tb-val">Jeff</span></div>
+      <div class="tb-cell"><span class="tb-key">METHOD</span><span class="tb-val">TOC / Cloud</span></div>
+      <div class="tb-cell"><span class="tb-key">STATUS</span><span class="tb-val">Open</span></div>
+    </div>
+  </div>
+
+  <div class="figwrap">
+    <figure>
+      <div class="figscroll">
+        <svg viewBox="0 0 1044 610" role="img" aria-label="Evaporating cloud diagram: the common objective of maximizing revenue flow requires need B, parts synchronized with the build schedule, which requires want D, Supply Chain reporting to Production; the same objective requires need C, Supply Chain serving the whole system, which requires want D-prime, Supply Chain standing alone under Jeff. D and D-prime are mutually exclusive because Supply Chain reports to exactly one place.">
+          <defs>
+            <pattern id="dgrid" width="24" height="24" patternUnits="userSpaceOnUse">
+              <path d="M24 0H0V24" fill="none" class="gridline"/>
+            </pattern>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 Z" class="ah"/>
+            </marker>
+            <marker id="aht" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 Z" class="ah-t"/>
+            </marker>
+          </defs>
+
+          <rect x="12" y="12" width="1020" height="586" fill="url(#dgrid)"/>
+          <rect x="12" y="12" width="1020" height="586" fill="none" class="frame"/>
+          <path class="tick" d="M12 34V12H34M1010 12h22v22M1032 576v22h-22M34 598H12v-22"/>
+
+          <!-- A · common objective -->
+          <rect class="box" x="24" y="237" width="224" height="126"/>
+          <rect class="s1" x="24" y="237" width="4" height="63"/>
+          <rect class="s2" x="24" y="300" width="4" height="63"/>
+          <text class="b-code" x="42" y="268" fill="var(--ink)">A</text>
+          <text class="b-eye" x="66" y="266" fill="var(--ink-3)">COMMON OBJECTIVE</text>
+          <line class="hair" x1="42" y1="280" x2="230" y2="280"/>
+          <text class="b-body" x="42" y="303">Maximize revenue flow</text>
+          <text class="b-body" x="42" y="324">through the pipe —</text>
+          <text class="b-body" x="42" y="345">now and future</text>
+
+          <!-- B · need -->
+          <rect class="box" x="316" y="60" width="316" height="136"/>
+          <rect class="s1" x="316" y="60" width="4" height="136"/>
+          <text class="b-code" x="334" y="91" fill="var(--steel)">B</text>
+          <text class="b-eye" x="358" y="89" fill="var(--ink-3)">NEED</text>
+          <line class="hair" x1="334" y1="103" x2="614" y2="103"/>
+          <text class="b-body" x="334" y="126">Parts synchronized tightly with</text>
+          <text class="b-body" x="334" y="147">the build schedule</text>
+          <text class="b-note" x="334" y="176">R1 — the drum feeds Build</text>
+
+          <!-- C · need -->
+          <rect class="box" x="316" y="384" width="316" height="176"/>
+          <rect class="s2" x="316" y="384" width="4" height="176"/>
+          <text class="b-code" x="334" y="415" fill="var(--teal)">C</text>
+          <text class="b-eye" x="358" y="413" fill="var(--ink-3)">NEED</text>
+          <line class="hair" x1="334" y1="427" x2="614" y2="427"/>
+          <text class="b-body" x="334" y="450">SC serves the WHOLE system —</text>
+          <text class="b-body" x="334" y="471">field parts (R2), cash and</text>
+          <text class="b-body" x="334" y="492">inventory discipline (R4),</text>
+          <text class="b-body" x="334" y="513">supplier strategy</text>
+          <text class="b-note" x="334" y="540">…with checks against expedite-at-any-cost</text>
+
+          <!-- D · want -->
+          <rect class="box" x="712" y="68" width="308" height="120"/>
+          <rect class="s1" x="712" y="68" width="4" height="120"/>
+          <text class="b-code" x="730" y="99" fill="var(--steel)">D</text>
+          <text class="b-eye" x="754" y="97" fill="var(--ink-3)">WANT</text>
+          <line class="hair" x1="730" y1="111" x2="1002" y2="111"/>
+          <text class="b-body" x="730" y="134">SC reports to Production</text>
+          <text class="b-body" x="730" y="155">(Chris’s position)</text>
+
+          <!-- D′ · want -->
+          <rect class="box" x="712" y="408" width="308" height="128"/>
+          <rect class="s2" x="712" y="408" width="4" height="128"/>
+          <text class="b-code" x="730" y="439" fill="var(--teal)">D′</text>
+          <text class="b-eye" x="762" y="437" fill="var(--ink-3)">WANT</text>
+          <line class="hair" x1="730" y1="451" x2="1002" y2="451"/>
+          <text class="b-body" x="730" y="474">SC stands alone — reporting</text>
+          <text class="b-body" x="730" y="495">to Jeff as a peer of</text>
+          <text class="b-body" x="730" y="516">Production and SD</text>
+
+          <!-- edges -->
+          <line class="edge" x1="248" y1="272" x2="316" y2="168" marker-end="url(#ah)"/>
+          <rect class="plate" x="263" y="211" width="40" height="18"/>
+          <text class="e-code" x="283" y="224" text-anchor="middle">A→B</text>
+
+          <line class="edge" x1="248" y1="330" x2="316" y2="438" marker-end="url(#ah)"/>
+          <rect class="plate" x="261" y="375" width="44" height="18"/>
+          <text class="e-code" x="283" y="388" text-anchor="middle">A→C</text>
+
+          <line class="edge" x1="632" y1="128" x2="712" y2="128" marker-end="url(#ah)"/>
+          <rect class="plate" x="652" y="119" width="40" height="18"/>
+          <text class="e-code" x="672" y="132" text-anchor="middle">B→D</text>
+
+          <line class="edge" x1="632" y1="472" x2="712" y2="472" marker-end="url(#ah)"/>
+          <rect class="plate" x="650" y="463" width="44" height="18"/>
+          <text class="e-code" x="672" y="476" text-anchor="middle">C→D′</text>
+
+          <!-- conflict -->
+          <line class="edge-t" x1="866" y1="188" x2="866" y2="264" marker-start="url(#aht)"/>
+          <line class="edge-t" x1="866" y1="332" x2="866" y2="408" marker-end="url(#aht)"/>
+          <rect class="plate-t" x="740" y="266" width="252" height="64"/>
+          <text class="c-code" x="866" y="288" text-anchor="middle">D ↔ D′ &nbsp;CONFLICT</text>
+          <text class="c-body" x="866" y="308" text-anchor="middle">SC reports to exactly one place,</text>
+          <text class="c-body" x="866" y="323" text-anchor="middle">whole and undivided</text>
+        </svg>
+      </div>
+      <figcaption>Every arrow carries an assumption. Read <code>A→B</code> as “in order to have A, we must have B” — and each code keys to the audit below, where that assumption is stated as the <em>because</em> it rests on. The tension is not between the needs; it is only between the two wants.</figcaption>
+    </figure>
+  </div>
+
+  <section class="read">
+    <p class="eyebrow">READ ALOUD</p>
+    <div class="prongs">
+      <p class="prong prong-1"><span class="pl">IN ORDER TO</span>maximize revenue flow, parts must sync tightly with the build schedule — <strong>so SC must report to Production.</strong></p>
+      <p class="prong prong-2"><span class="pl">BUT IN ORDER TO</span>maximize revenue flow, SC must also serve field parts, cash, and strategy with independent judgment — <strong>so SC must stand alone.</strong></p>
+    </div>
+    <p class="verdict">It can’t do both.</p>
+  </section>
+
+  <section class="audit">
+    <div class="sec-head">
+      <h2>Assumption audit</h2>
+      <p class="sec-note">13 ASSUMPTIONS ACROSS 5 EDGES</p>
+    </div>
+
+    <div class="row">
+      <div class="row-key">
+        <span class="rk-code rk-1">A→B</span>
+        <span class="rk-gloss">The objective requires the sync need</span>
+      </div>
+      <ol class="becauses">
+        <li><span class="num">01</span><span><em>because</em> delivery date = revenue start</span></li>
+        <li><span class="num">02</span><span><em>because</em> parts-into-build is today’s constraint</span></li>
+        <li><span class="num">03</span><span><em>because</em> desync shows up directly as slipped go-lives</span></li>
+      </ol>
+    </div>
+
+    <div class="row">
+      <div class="row-key">
+        <span class="rk-code rk-2">A→C</span>
+        <span class="rk-gloss">The objective requires the whole-system need</span>
+      </div>
+      <ol class="becauses">
+        <li><span class="num">01</span><span><em>because</em> revenue continues AFTER go-live (&gt;70% of field tickets need parts)</span></li>
+        <li><span class="num">02</span><span><em>because</em> growth must convert to margin and cash</span></li>
+        <li><span class="num">03</span><span><em>because</em> supplier strategy outlives any single build</span></li>
+      </ol>
+    </div>
+
+    <div class="row row-weak">
+      <div class="row-key">
+        <span class="rk-code rk-1">B→D</span>
+        <span class="rk-gloss">The sync need requires reporting into Production</span>
+      </div>
+      <ol class="becauses">
+        <li><span class="num">01</span><span class="weak-txt"><em>because</em> the ONLY way to synchronize two functions is common management<span class="tag">WEAKEST</span></span></li>
+        <li><span class="num">02</span><span><em>because</em> what Production needs from SC = what the company needs from SC</span></li>
+        <li><span class="num">03</span><span><em>because</em> Eric has the bandwidth and sourcing depth to run it well</span></li>
+      </ol>
+    </div>
+
+    <div class="row">
+      <div class="row-key">
+        <span class="rk-code rk-2">C→D′</span>
+        <span class="rk-gloss">The whole-system need requires standing alone</span>
+      </div>
+      <ol class="becauses">
+        <li><span class="num">01</span><span><em>because</em> ONLY structural independence protects non-factory priorities</span></li>
+        <li><span class="num">02</span><span><em>because</em> an SC leader inside Production can’t refuse a margin-destroying expedite</span></li>
+        <li><span class="num">03</span><span><em>because</em> Jeff has capacity for another strong direct report</span></li>
+      </ol>
+    </div>
+
+    <div class="row">
+      <div class="row-key">
+        <span class="rk-code rk-x">D↔D′</span>
+        <span class="rk-gloss">The two wants exclude each other</span>
+      </div>
+      <ol class="becauses">
+        <li><span class="num">01</span><span><em>because</em> SC must report to exactly one place, whole and undivided</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="weakest">
+    <p class="wk-label">WEAKEST ASSUMPTION</p>
+    <div>
+      <span class="wk-cite">B→D #01</span>
+      <p class="wk-claim">“Synchronization requires common management.”</p>
+      <p class="wk-note">This is the load-bearing link in the whole diagram: it is the only thing forcing the sync need onto a reporting line. Break it — show that parts and build can be synchronized by mechanism rather than by org chart — and the conflict evaporates without either need being sacrificed.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>CLOUD · WHERE DOES SUPPLY CHAIN REPORT</span>
+  <span>OWNER: JEFF · 8/21 · SHEET 1 OF 1</span>
+</footer>
