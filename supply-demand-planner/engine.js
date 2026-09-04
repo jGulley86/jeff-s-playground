@@ -24,7 +24,7 @@ export const REASONS = {
 };
 
 export const toDate = (iso) => new Date(iso + "T00:00:00");
-export const iso = (d) => d.toISOString().slice(0, 10);
+export const iso = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); // local calendar date
 export const addDays = (d, n) => new Date(d.getTime() + n * DAY);
 export const uid = () => Math.random().toString(36).slice(2, 9);
 export const zeros = (n) => Array.from({ length: n }, () => 0);

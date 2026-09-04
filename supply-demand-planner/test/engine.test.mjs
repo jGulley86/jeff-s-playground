@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seedState, migrate, project, includedStages, demandByWeek, atpInfo, atp, PRODUCTS, STAGES } from "../engine.js";
+import { seedState, migrate, project, includedStages, demandByWeek, atpInfo, atp, iso, toDate, PRODUCTS, STAGES } from "../engine.js";
 
 /* Projected deployable inventory rows from the 2026 Demand Forecast workbook
    (as carried in the previous mock). The engine must reproduce them exactly
@@ -84,6 +84,12 @@ test("migrate: an older save without new fields loads on the current shape", () 
   assert.ok(m.demand.every((d) => d.review === "accepted" && d.site === ""));
   const { ending } = project(m, 0, includedStages(m.params));
   assert.deepEqual(ending.ht, WB_HT);
+});
+
+test("iso() returns the local calendar date, not the UTC one", () => {
+  const late = new Date(2026, 8, 4, 23, 30); // Sep 4, 23:30 local
+  assert.equal(iso(late), "2026-09-04");
+  assert.equal(iso(toDate("2026-06-29")), "2026-06-29");
 });
 
 test("stage order encodes how locked-in a deployment is", () => {
