@@ -140,15 +140,38 @@ function seedState() {
       { id: uid(), at: "2026-06-24", who: "Jeff Gulley", what: "Approved plan P-2026-06-24 (baseline from workbook)." },
     ],
     acks: {},
-    params: { cap: 1000000, leadWeeks: 8, protectWeeks: 8, materialLeadWeeks: 10, kitHeavy: 3, kitLight: 4, countSoft: true, countNegotiation: true },
+    planHistory: [],
+    user: "",
+    params: { cap: 1000000, leadWeeks: 8, protectWeeks: 8, materialLeadWeeks: 10, holdDays: 14, kitHeavy: 3, kitLight: 4, countSoft: true, countNegotiation: true },
   };
+}
+
+/* Merge a saved state onto the current seed shape so older saves never crash a newer build. */
+function migrate(saved) {
+  const seed = seedState();
+  const N = (saved.meta && saved.meta.weeks && saved.meta.weeks.length) || seed.meta.weeks.length;
+  const arr = (a, fill) => (Array.isArray(a) && a.length === N ? a : Array.from({ length: N }, (_, i) => (Array.isArray(a) && a[i] != null ? a[i] : fill)));
+  const s = { ...seed, ...saved };
+  s.meta = { ...seed.meta, ...(saved.meta || {}) };
+  s.params = { ...seed.params, ...(saved.params || {}) };
+  s.products = {}; PRODUCTS.forEach((p) => { s.products[p] = { ...seed.products[p], ...((saved.products || {})[p] || {}) }; });
+  s.plan = { ...seed.plan, ...(saved.plan || {}), builds: {} };
+  PRODUCTS.forEach((p) => { s.plan.builds[p] = arr(((saved.plan || {}).builds || {})[p], 0); });
+  if (saved.draft) { s.draft = { reasonType: "", note: "", ...saved.draft, builds: {} }; PRODUCTS.forEach((p) => { s.draft.builds[p] = arr((saved.draft.builds || {})[p], 0); }); }
+  s.actuals = {}; s.adjust = {};
+  PRODUCTS.forEach((p) => { s.actuals[p] = arr((saved.actuals || {})[p], null); s.adjust[p] = arr((saved.adjust || {})[p], 0); });
+  s.supply = { ...seed.supply, ...(saved.supply || {}) };
+  s.demand = (saved.demand || []).map((d) => ({ site: "", source: "manual", review: "accepted", materialReleased: false, note: "", ...d }));
+  s.gaps = saved.gaps || []; s.ledger = saved.ledger || []; s.acks = saved.acks || {}; s.planHistory = saved.planHistory || [];
+  s.consensus = saved.consensus || ""; s.user = saved.user || "";
+  return s;
 }
 
 function loadState() {
   try {
     const raw = window.localStorage.getItem(STORE_KEY);
-    if (raw) { const s = JSON.parse(raw); if (s && s.meta && s.plan && s.demand) return s; }
-  } catch (e) { /* storage unavailable: fall through to seed */ }
+    if (raw) { const s = JSON.parse(raw); if (s && s.meta && s.plan && s.demand) return migrate(s); }
+  } catch (e) { /* storage unavailable or corrupt: fall through to seed */ }
   return seedState();
 }
 
@@ -260,6 +283,7 @@ export default function SupplyDemandPlanner() {
   const [flash, setFlash] = useState("");
   const [editing, setEditing] = useState(null);   // deployment being edited (object) or "new"
   const [showSupply, setShowSupply] = useState(false);
+  const [focus, setFocus] = useState("all"); // "all" | 8 | 13 weeks from now
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [askMode, setAskMode] = useState("when");
   const [trayType, setTrayType] = useState("heavy");
@@ -278,7 +302,7 @@ export default function SupplyDemandPlanner() {
 
   const toast = useCallback((msg) => { setFlash(msg); window.setTimeout(() => setFlash(""), 2200); }, []);
   const update = useCallback((fn) => setState((s) => { const n = typeof fn === "function" ? fn(s) : fn; return n; }), []);
-  const log = (s, who, what) => ({ ...s, ledger: [{ id: uid(), at: iso(new Date()), who, what }, ...s.ledger].slice(0, 200) });
+  const log = (s, who, what) => ({ ...s, ledger: [{ id: uid(), at: iso(new Date()), who: s.user ? `${s.user} · ${who}` : who, what }, ...s.ledger].slice(0, 200) });
 
   /* ── derived: calendar position ─────────────────────────────── */
   const { weeks } = state.meta;
@@ -378,6 +402,8 @@ export default function SupplyDemandPlanner() {
     if (proposed.length) out.push({ id: "queue", sev: "amber", owner: "planner", title: `${proposed.length} deployment${proposed.length > 1 ? "s" : ""} awaiting review`, body: "Accept, amend, or reject before Monday EOD so the queue is clear for Wednesday's consensus meeting.", queue: proposed });
     const release = state.demand.filter((d) => ["po", "contract"].includes(d.stage) && d.review !== "rejected" && !d.materialReleased && d.week - state.params.materialLeadWeeks <= nowIdx + 2);
     if (release.length) out.push({ id: "release", sev: "amber", owner: "supply", title: `Material release due for ${release.length} deployment${release.length > 1 ? "s" : ""}`, body: release.map((d) => `${d.customer} ${fmtWeek(weeks[d.week])}`).join(", ") + ` — contract in hand and inside the ${state.params.materialLeadWeeks}-week material lead time. Release the buy.`, release });
+    const expired = state.demand.filter((d) => d.stage === "soft" && d.review !== "rejected" && d.expiresAt && toDate(d.expiresAt) < today);
+    if (expired.length) out.push({ id: "expired", sev: "amber", owner: "planner", title: `${expired.length} soft hold${expired.length > 1 ? "s" : ""} past expiry`, body: `Holds last ${state.params.holdDays} days unless the deal moves to negotiation. Release the units or extend if the deal is alive.`, expired });
     const missing = PRODUCTS.some((p) => state.actuals[p].slice(Math.max(0, nowIdx - 4), nowIdx).some((v) => v == null));
     if (missing && nowIdx > 0) out.push({ id: "actuals", sev: "amber", owner: "mfg", title: "Build actuals missing for recent weeks", body: "Plan-vs-actual can't be read. Key actuals in the supply detail rows (toggle below the calendar)." });
     return out.sort((a, b) => (a.sev === b.sev ? 0 : a.sev === "red" ? -1 : 1));
@@ -458,10 +484,11 @@ export default function SupplyDemandPlanner() {
   const setReview = (id, review) => update((s) => { const d = s.demand.find((x) => x.id === id); return log({ ...s, demand: s.demand.map((x) => (x.id === id ? { ...x, review } : x)) }, "Planner", `${review === "accepted" ? "Accepted" : "Rejected"} ${d ? d.customer + " " + fmtWeek(weeks[d.week]) : id}.`); });
   const releaseMaterial = (id) => update((s) => { const d = s.demand.find((x) => x.id === id); return log({ ...s, demand: s.demand.map((x) => (x.id === id ? { ...x, materialReleased: true } : x)) }, "Supply Chain", `Material released for ${d ? d.customer + " " + fmtWeek(weeks[d.week]) : id}.`); });
   const ackSignal = (id) => update((s) => ({ ...s, acks: { ...s.acks, [id]: iso(today) } }));
+  const extendHold = (id) => update((s) => { const d = s.demand.find((x) => x.id === id); return log({ ...s, demand: s.demand.map((x) => (x.id === id ? { ...x, expiresAt: iso(addDays(today, s.params.holdDays)) } : x)) }, "Planner", `Extended soft hold for ${d ? d.customer : id} by ${s.params.holdDays} days.`); });
 
   const placeHold = () => {
     if (!ask || ask.shipWeek == null) return;
-    const d = { id: uid(), customer: holdName.trim() || "Unnamed prospect", site: "", week: ask.shipWeek, sl: qLifts, ht: trayType === "heavy" ? qTrays : 0, lt: trayType === "light" ? qTrays : 0, stage: "soft", source: "ask", review: "proposed", materialReleased: false, note: "Soft hold from availability check", createdAt: iso(today) };
+    const d = { id: uid(), customer: holdName.trim() || "Unnamed prospect", site: "", week: ask.shipWeek, sl: qLifts, ht: trayType === "heavy" ? qTrays : 0, lt: trayType === "light" ? qTrays : 0, stage: "soft", source: "ask", review: "proposed", materialReleased: false, note: "Soft hold from availability check", createdAt: iso(today), expiresAt: iso(addDays(today, state.params.holdDays)) };
     update((s) => log({ ...s, demand: [d, ...s.demand] }, "Sales", `Soft hold: ${d.customer} — ${qLifts} lifts + ${qTrays} ${trayLabel}, week of ${fmtWeek(weeks[ask.shipWeek])}.`));
     setHoldName(""); toast("Soft hold placed — planner will review");
   };
@@ -517,13 +544,15 @@ export default function SupplyDemandPlanner() {
   };
   const importJson = (file) => {
     const r = new FileReader();
-    r.onload = () => { try { const s = JSON.parse(String(r.result)); if (s && s.meta && s.plan && s.demand) { setState(s); toast("Plan imported"); } else toast("Not a planner file"); } catch (e) { toast("Could not read file"); } };
+    r.onload = () => { try { const s = JSON.parse(String(r.result)); if (s && s.meta && s.plan && s.demand) { setState(migrate(s)); toast("Plan imported"); } else toast("Not a planner file"); } catch (e) { toast("Could not read file"); } };
     r.readAsText(file);
   };
   const resetSeed = () => { if (window.confirm("Replace everything in this browser with the seed plan from the workbook?")) { setState(seedState()); toast("Reset to seed"); } };
 
   /* ── Renders ────────────────────────────────────────────────── */
-  const sortedDemand = useMemo(() => [...state.demand].filter((d) => d.review !== "rejected").sort((a, b) => a.week - b.week || STAGES[a.stage].order - STAGES[b.stage].order), [state.demand]);
+  const view = useMemo(() => weeks.map((_, i) => i).filter((i) => focus === "all" || (i >= Math.max(0, nowIdx - 1) && i < nowIdx + focus)), [weeks, focus, nowIdx]);
+  const vweeks = useMemo(() => view.map((i) => [weeks[i], i]), [view, weeks]);
+  const sortedDemand = useMemo(() => [...state.demand].filter((d) => d.review !== "rejected" && (focus === "all" || view.includes(d.week))).sort((a, b) => a.week - b.week || STAGES[a.stage].order - STAGES[b.stage].order), [state.demand, focus, view]);
   const cellClass = (v, buffer) => (v < 0 ? "neg" : v < buffer ? "buf" : "ok");
   const hardShort = PRODUCTS.map((p) => projHard.ending[p].slice(nowIdx).some((v) => v < 0));
   const fgNow = PRODUCTS.reduce((s, p) => s + Math.max(0, proj.ending[p][nowIdx]) * state.products[p].cost, 0);
@@ -549,6 +578,7 @@ export default function SupplyDemandPlanner() {
           <div className={"chip " + (supplyStale ? "hot" : "ok")} title={"Last keyed by " + state.supply.by}>Supply inputs <b>{supplyAgeDays === 0 ? "today" : supplyAgeDays + "d old"}</b></div>
           <div className={"chip " + (fgNow > state.params.cap ? "hot" : "ok")}>Finished goods <b>{fmt$k(fgNow)}</b> / {fmt$k(state.params.cap)}</div>
           <div className="chip">Week of <b>{fmtWeek(weeks[nowIdx])}</b>{nowIdxRaw !== nowIdx ? <span className="dim"> (horizon edge)</span> : null}</div>
+          <input className="who" value={state.user} placeholder="Your name (for the ledger)" aria-label="Your name" onChange={(e) => update((s) => ({ ...s, user: e.target.value }))} />
         </div>
       </header>
 
@@ -563,6 +593,30 @@ export default function SupplyDemandPlanner() {
           <div className="cad-actions">
             <button className="btn ghost" onClick={() => copyText(weeklyPack(), "Weekly pack")}>Copy weekly pack</button>
             <button className="btn ghost" onClick={markSupplyCurrent}>Mark supply inputs keyed</button>
+          </div>
+        </div>
+
+        {/* ══ At a glance ══ */}
+        <div className="kpis">
+          {PRODUCTS.map((p) => {
+            const e = proj.ending[p]; const first = e.findIndex((v, t) => t >= nowIdx && v < 0);
+            const freeW = Math.min(N - 1, nowIdx + leadWeeks); const free = atpInfoOf(p, freeW);
+            return (
+              <div key={p} className={"kpi" + (first >= 0 ? " bad" : "")}>
+                <div className="kpi-name" style={{ color: PRODUCT_META[p].color }}>{PRODUCT_META[p].name}</div>
+                <div className="kpi-row"><span>On hand now</span><b>{e[nowIdx]}</b></div>
+                <div className="kpi-row"><span>Free to promise {fmtWeek(weeks[freeW])}</span><b>{free.qty}{free.cond ? <small title="conditional — deepens a later shortfall">*</small> : null}</b></div>
+                <div className="kpi-row"><span>First shortfall</span><b className={first >= 0 ? "hot-text" : ""}>{first >= 0 ? fmtWeek(weeks[first]) + " (" + Math.min(...e.slice(nowIdx)) + ")" : "none"}</b></div>
+                <div className="kpi-row"><span>Year-end</span><b>{e[N - 1]}</b></div>
+              </div>
+            );
+          })}
+          <div className={"kpi" + (fgNow > state.params.cap ? " bad" : "")}>
+            <div className="kpi-name">Finished goods</div>
+            <div className="kpi-row"><span>Now</span><b>{fmt$k(fgNow)}</b></div>
+            <div className="kpi-row"><span>Peak in plan</span><b>{fmt$k(Math.max(...chartData.slice(nowIdx).map((r) => r["Finished goods $"])))}</b></div>
+            <div className="kpi-row"><span>Cap</span><b>{fmt$k(state.params.cap)}</b></div>
+            <div className="kpi-row"><span>Open signals</span><b className={signals.some((x) => x.sev === "red") ? "hot-text" : ""}>{signals.length}</b></div>
           </div>
         </div>
 
@@ -583,6 +637,12 @@ export default function SupplyDemandPlanner() {
             {askMode === "when" ? (
               <>
                 <div className="inputs">
+                  <div className="slots" role="group" aria-label="Deployment size presets">
+                    <span className="slots-k">Slot</span>
+                    {[["S", 1], ["M", 2], ["L", 4]].map(([k, n]) => (
+                      <button key={k} className={"slot" + (qLifts === n && qTrays === n * RATIO ? " on" : "")} title={`${k}: ${n} lift${n > 1 ? "s" : ""} + ${n * RATIO} ${trayLabel}`} onClick={() => { setQLifts(n); setQTrays(n * RATIO); setLinkTrays(true); }}>{k}<small>{n}+{n * RATIO}</small></button>
+                    ))}
+                  </div>
                   <Stepper id="ql" label="SlipLifts" value={qLifts} onChange={(v) => { setQLifts(v); if (linkTrays) setQTrays(v * RATIO); }} accent={T.amber} />
                   <div className="tray-col">
                     <div className="type-seg" role="group" aria-label="Tray type">
@@ -684,6 +744,28 @@ export default function SupplyDemandPlanner() {
             )}
           </div>
 
+          {askMode === "when" && ask && ask.shipWeek != null && (
+            <div className="miles" aria-label="Backward plan">
+              {[
+                { label: "Site qualification starts", week: ask.shipWeek - leadWeeks, owner: "Sales + customer" },
+                { label: "Implementation kickoff", week: ask.shipWeek - Math.ceil(leadWeeks * 0.6), owner: "Ops" },
+                { label: "Field tech + warehouse confirmed", week: ask.shipWeek - 3, owner: "Service Delivery" },
+                { label: "Material complete / handoff", week: ask.shipWeek - 1, owner: "Production" },
+                { label: "Dock pickup → go-live", week: ask.shipWeek, owner: "Logistics · Field Ops" },
+              ].map((m, i) => {
+                const wk = Math.max(nowIdx, Math.min(m.week, ask.shipWeek));
+                return (
+                  <div key={i} className={"mile" + (m.week <= nowIdx ? " due" : "")}>
+                    <div className="mile-dot" />
+                    <div className="mile-wk">{m.week <= nowIdx ? "Now" : fmtWeek(weeks[wk])}</div>
+                    <div className="mile-label">{m.label}</div>
+                    <div className="mile-owner">{m.owner}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* free-kits strip */}
           <div className="heat-scroll">
             <div className="heat">
@@ -718,6 +800,9 @@ export default function SupplyDemandPlanner() {
               <p className="sub">The whole plan on one grid, like the workbook — but every cell is a typed record. Click a row to edit. Build cells are editable by the plan owner and create a draft for approval.</p>
             </div>
             <div className="head-actions">
+              <div className="seg" role="group" aria-label="Focus window">
+                {[["all", "Full horizon"], [8, "Next 8 wks"], [13, "Next 13 wks"]].map(([k, l]) => <button key={k} className={focus === k ? "on" : ""} onClick={() => setFocus(k)}>{l}</button>)}
+              </div>
               <button className="btn" onClick={() => setEditing("new")}>+ Add deployment</button>
               <label className="link-toggle"><input type="checkbox" checked={showSupply} onChange={(e) => setShowSupply(e.target.checked)} /> Supply detail rows</label>
             </div>
@@ -736,7 +821,7 @@ export default function SupplyDemandPlanner() {
               <thead>
                 <tr>
                   <th className="sticky lbl">Week of</th>
-                  {weeks.map((w, i) => (
+                  {vweeks.map(([w, i]) => (
                     <th key={w} className={(i === nowIdx ? "now" : "") + (i < nowIdx ? " past" : "")}>
                       <div className="q">{(i === 0 || toDate(w).getMonth() !== toDate(weeks[i - 1]).getMonth()) ? MONTHS[toDate(w).getMonth()] : ""}</div>
                       <div>{toDate(w).getDate()}</div>
@@ -749,26 +834,26 @@ export default function SupplyDemandPlanner() {
                   <tr key={d.id} className={"dep" + (d.review === "proposed" ? " proposed" : "")} onClick={() => setEditing(d)} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setEditing(d); }}>
                     <td className="sticky lbl">
                       <div className="cust">{d.customer}{d.review === "proposed" ? <span className="rev" title="Awaiting planner review">review</span> : null}</div>
-                      <div className="site"><StageChip stage={d.stage} />{d.site ? <span className="dim"> {d.site}</span> : null}</div>
+                      <div className="site"><StageChip stage={d.stage} />{d.site ? <span className="dim"> {d.site}</span> : null}{d.stage === "soft" && d.expiresAt ? <span className={"dim" + (toDate(d.expiresAt) < today ? " hot-text" : "")}> · {toDate(d.expiresAt) < today ? "expired" : "expires " + fmtWeek(d.expiresAt)}</span> : null}</div>
                     </td>
-                    {weeks.map((w, i) => (
+                    {vweeks.map(([w, i]) => (
                       <td key={w} className={(i === nowIdx ? "now" : "") + (i < nowIdx ? " past" : "")}>
                         {i === d.week ? <span className={"pill st-" + d.stage} title={`${d.customer}: ${d.sl || 0} lifts, ${d.ht || 0} heavy, ${d.lt || 0} light — ${STAGES[d.stage].label}`}><Qty d={d} /></span> : null}
                       </td>
                     ))}
                   </tr>
                 ))}
-                {sortedDemand.length === 0 && <tr><td className="sticky lbl empty" colSpan={N + 1}>No deployments yet. Add one, or place a soft hold from the availability check above.</td></tr>}
+                {sortedDemand.length === 0 && <tr><td className="sticky lbl empty" colSpan={view.length + 1}>No deployments yet. Add one, or place a soft hold from the availability check above.</td></tr>}
 
                 {PRODUCTS.map((p) => {
                   const meta = PRODUCT_META[p]; const prod = state.products[p];
                   const planB = state.draft ? state.draft.builds[p] : state.plan.builds[p];
                   return (
                     <React.Fragment key={p}>
-                      <tr className="sep"><td className="sticky lbl" colSpan={N + 1}><span style={{ color: meta.color }}>{meta.name}</span> <span className="dim">· on hand {prod.opening} at start · buffer {prod.buffer} · max {prod.maxRate}/wk · demand counted: {stages.map((s) => STAGES[s].short).join(" ")}</span></td></tr>
+                      <tr className="sep"><td className="sticky lbl" colSpan={view.length + 1}><span style={{ color: meta.color }}>{meta.name}</span> <span className="dim">· on hand {prod.opening} at start · buffer {prod.buffer} · max {prod.maxRate}/wk · demand counted: {stages.map((s) => STAGES[s].short).join(" ")}</span></td></tr>
                       <tr className="num">
                         <td className="sticky lbl">Build plan <span className="dim">{state.draft ? "(draft)" : state.plan.version}</span></td>
-                        {weeks.map((w, i) => {
+                        {vweeks.map(([w, i]) => {
                           const past = i < nowIdx; const actual = state.actuals[p][i];
                           const changed = state.draft && state.draft.builds[p][i] !== state.plan.builds[p][i];
                           return (
@@ -786,7 +871,7 @@ export default function SupplyDemandPlanner() {
                         <>
                           <tr className="num supply">
                             <td className="sticky lbl">Actual built <span className="dim">(past weeks)</span></td>
-                            {weeks.map((w, i) => (
+                            {vweeks.map(([w, i]) => (
                               <td key={w} className={(i === nowIdx ? "now" : "") + (i < nowIdx ? " past" : "")}>
                                 {i < nowIdx ? <input className="cellin" type="number" min="0" max="99" placeholder="–" value={state.actuals[p][i] == null ? "" : state.actuals[p][i]} aria-label={`${meta.name} actual week of ${fmtWeek(w)}`} onChange={(e) => setActual(p, i, e.target.value)} onFocus={(e) => e.target.select()} /> : null}
                               </td>
@@ -794,7 +879,7 @@ export default function SupplyDemandPlanner() {
                           </tr>
                           <tr className="num supply">
                             <td className="sticky lbl">Returns / catch-up <span className="dim">(±)</span></td>
-                            {weeks.map((w, i) => (
+                            {vweeks.map(([w, i]) => (
                               <td key={w} className={(i === nowIdx ? "now" : "") + (i < nowIdx ? " past" : "")}>
                                 <input className="cellin" type="number" min="-99" max="99" value={state.adjust[p][i]} aria-label={`${meta.name} adjustment week of ${fmtWeek(w)}`} onChange={(e) => setAdjust(p, i, e.target.value)} onFocus={(e) => e.target.select()} />
                               </td>
@@ -802,13 +887,13 @@ export default function SupplyDemandPlanner() {
                           </tr>
                           <tr className="num supply">
                             <td className="sticky lbl">Demand counted</td>
-                            {weeks.map((w, i) => <td key={w} className={(i === nowIdx ? "now" : "") + (i < nowIdx ? " past" : "")}>{proj.dem[p][i] ? <span className="dem">−{proj.dem[p][i]}</span> : <span className="dim">·</span>}</td>)}
+                            {vweeks.map(([w, i]) => <td key={w} className={(i === nowIdx ? "now" : "") + (i < nowIdx ? " past" : "")}>{proj.dem[p][i] ? <span className="dem">−{proj.dem[p][i]}</span> : <span className="dim">·</span>}</td>)}
                           </tr>
                         </>
                       )}
                       <tr className="num end">
                         <td className="sticky lbl">Deployable inventory</td>
-                        {weeks.map((w, i) => {
+                        {vweeks.map(([w, i]) => {
                           const v = proj.ending[p][i];
                           return <td key={w} className={(i === nowIdx ? "now" : "") + (i < nowIdx ? " past" : "")}><span className={"bal " + cellClass(v, prod.buffer)} title={`${meta.name}, end of week ${fmtWeek(w)}: ${v}${approvedProj ? ` (approved plan: ${approvedProj.ending[p][i]})` : ""}`}>{v}</span></td>;
                         })}
@@ -887,6 +972,11 @@ export default function SupplyDemandPlanner() {
                         <button className="mini danger" onClick={() => setReview(d.id, "rejected")}>Reject</button></span>
                     ))}</div>}
                     {s.release && <div className="sig-actions">{s.release.map((d) => <button key={d.id} className="mini" onClick={() => releaseMaterial(d.id)}>Release material: {d.customer} {fmtWeek(weeks[d.week])}</button>)}</div>}
+                    {s.expired && <div className="sig-actions">{s.expired.map((d) => (
+                      <span key={d.id} className="queue-item"><span className="cust">{d.customer}</span> {fmtWeek(weeks[d.week])} <Qty d={d} /> <span className="dim">expired {d.expiresAt}</span>
+                        <button className="mini" onClick={() => extendHold(d.id)}>Extend {state.params.holdDays}d</button>
+                        <button className="mini danger" onClick={() => setReview(d.id, "rejected")}>Release</button></span>
+                    ))}</div>}
                     {s.ack && !state.acks[s.id] && <div className="sig-actions"><button className="mini" onClick={() => ackSignal(s.id)}>Acknowledge (leadership)</button></div>}
                     {s.ack && state.acks[s.id] && <div className="dim small-note">Acknowledged {state.acks[s.id]}</div>}
                   </div>
@@ -979,7 +1069,7 @@ export default function SupplyDemandPlanner() {
                 ))}
                 <div className="assump-card">
                   <h4>Policy</h4>
-                  {[["leadWeeks", "Site-readiness lead time (weeks)"], ["protectWeeks", "Protect commitments for (weeks)"], ["materialLeadWeeks", "Material lead time (weeks)"], ["kitHeavy", "Heavy trays per lift"], ["kitLight", "Light trays per lift"], ["cap", "Finished-goods exposure cap $"]].map(([k, lbl]) => (
+                  {[["leadWeeks", "Site-readiness lead time (weeks)"], ["protectWeeks", "Protect commitments for (weeks)"], ["materialLeadWeeks", "Material lead time (weeks)"], ["holdDays", "Soft hold expiry (days)"], ["kitHeavy", "Heavy trays per lift"], ["kitLight", "Light trays per lift"], ["cap", "Finished-goods exposure cap $"]].map(([k, lbl]) => (
                     <label key={k} className="row"><span>{lbl}</span><input type="number" value={state.params[k]} onChange={(e) => update((s) => ({ ...s, params: { ...s.params, [k]: Number(e.target.value) || 0 } }))} /></label>
                   ))}
                 </div>
@@ -1067,6 +1157,32 @@ const CSS = `
 .chip b{color:${T.text};font-weight:600;}
 .chip.ok{border-color:#1E4636;color:#7EDDB4;background:#0E1E18;}
 .chip.hot{border-color:#4A2626;color:#F5A19B;background:#1E1112;}
+.who{font:500 12px 'Inter';padding:7px 10px;border:1px solid ${T.border};border-radius:8px;background:${T.inset};color:${T.text};width:190px;}
+.who::placeholder{color:${T.muted};}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px;}
+.kpi{background:${T.panel};border:1px solid ${T.border};border-radius:10px;padding:10px 14px;display:grid;gap:4px;}
+.kpi.bad{border-color:#4A2626;}
+.kpi-name{font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px;}
+.kpi-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:${T.sub};}
+.kpi-row b{color:${T.text};font-variant-numeric:tabular-nums;font-weight:700;}
+.kpi-row b small{color:${T.warn};margin-left:2px;}
+.slots{display:flex;flex-direction:column;gap:5px;padding-bottom:6px;}
+.slots-k{font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:${T.muted};}
+.slot{display:flex;gap:6px;align-items:baseline;font:700 12px 'Inter';padding:5px 9px;border-radius:7px;border:1px solid ${T.border};background:${T.inset};color:${T.sub};cursor:pointer;}
+.slot small{font:500 10px 'JetBrains Mono',monospace;color:${T.muted};}
+.slot.on{border-color:${T.indigo};color:${T.text};background:rgba(110,98,245,.14);}
+.seg{display:inline-flex;border:1px solid ${T.border};border-radius:8px;overflow:hidden;background:${T.inset};padding:2px;gap:2px;}
+.seg button{font:500 11.5px 'Inter';padding:6px 10px;border:none;background:transparent;cursor:pointer;color:${T.sub};border-radius:6px;}
+.seg button.on{background:${T.indigo};color:#fff;font-weight:600;}
+.miles{display:flex;gap:0;margin-top:14px;overflow-x:auto;padding:12px 0 4px;border-top:1px dashed ${T.borderSoft};}
+.mile{flex:1;min-width:130px;position:relative;padding:0 10px 0 0;}
+.mile::before{content:"";position:absolute;top:6px;left:14px;right:0;height:1.5px;background:${T.border};}
+.mile:last-child::before{display:none;}
+.mile-dot{width:13px;height:13px;border-radius:50%;background:${T.canvas};border:3px solid ${T.indigo};position:relative;z-index:1;}
+.mile.due .mile-dot{background:${T.warn};border-color:${T.warn};}
+.mile-wk{font:600 12px 'JetBrains Mono',monospace;margin-top:8px;color:${T.text};}
+.mile-label{font-size:11px;font-weight:600;color:${T.sub};line-height:1.35;margin-top:2px;}
+.mile-owner{font-size:10.5px;color:${T.muted};margin-top:2px;}
 .draft-dot{color:${T.warn};font-weight:600;}
 .wrap{max-width:1400px;margin:0 auto;padding:0 20px;}
 .cadence{display:flex;gap:6px;margin:16px 0 0;flex-wrap:wrap;align-items:stretch;}
