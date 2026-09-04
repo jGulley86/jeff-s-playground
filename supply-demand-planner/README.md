@@ -21,6 +21,10 @@ Demand Planner PRD (2026-08-05).
 | Governance: named versions, Jeff approves, typed reasons, off-cycle flagged and counted | Editing any future build cell creates a **draft**. Approval requires the six things Jeff listed (delta preview, consensus number, coverage with buffer state, capacity signal green/acknowledged, plan-vs-actual, typed reason) and is **blocked** when supply inputs are older than 7 days or a capacity red is unacknowledged. Approving mints `P-YYYY-MM-DD` (`-OC` when off-cycle), records what it supersedes, and writes the ledger. Off-cycle approvals this quarter are counted; three triggers a constraint review. |
 | Negative cells were the only alarm | **Signals** each carry an owner: shortfall (Manufacturing), collision (Sales), over-capacity (Leadership, needs ack), cap breach (Finance), stale supply inputs, review queue (Planner), material release (Supply Chain), missing actuals. |
 | Weekly cadence lives in people's heads | Cadence strip (Mon demand refresh → Tue supply check → Wed consensus → Thu publish) highlights today. **Copy weekly pack** produces the Thursday publication text. |
+| "Deployment slots" so reps pick a size, not a spreadsheet cell (Ada) | S / M / L presets in the ask panel (1, 2, 4 lifts with the kit ratio of trays). |
+| A hold should not block units forever (PRD open question 7) | Soft holds expire after a configurable number of days; expired holds raise a planner signal with extend / release. |
+| "What if we go to 3 a week from October?" in the Wednesday meeting | Propose a rate change in one action; the draft, its ramifications and the approval checklist update live. |
+| At a glance | KPI tiles per product: on hand, free to promise at the first realistic week, first shortfall, year-end. |
 
 ## The model (one week convention)
 
@@ -50,11 +54,28 @@ Those are the workbook's facts, not bugs.
 
 ## Files
 
-- `SupplyDemandPlanner.jsx` — the component. Same shape as the old mock (default export,
-  imports `react` and `recharts`), so it drops into the SlipOS mocks route unchanged.
+- `SupplyDemandPlanner.jsx` — the UI component (default export, imports `react`, `recharts`
+  and `./engine.js`). Drop both files into the SlipOS mocks route.
+- `engine.js` — the math, with no React or DOM: seed data, saved-state migration, coverage
+  projection, ATP. Everything the page shows is computed here so it can be tested.
+- `test/engine.test.mjs` — unit tests (`npm test`). The first test asserts the engine
+  reproduces the workbook's deployable-inventory rows exactly from on-hand + builds − demand.
+  Others cover actuals overriding the plan, adjustments, drafts, conditional ATP, and migration.
+- `test/smoke.mjs` — headless-browser walk-through of the page (`npm run smoke`, needs
+  Playwright + Chromium): ask → hold → review → accept, blocked approval → checklist →
+  new version, editor, reload persistence, focus window.
 - `standalone.html` — self-contained build (React + Recharts inlined). Open it in a browser.
 - `build.mjs`, `package.json` — `npm install && npm run build` regenerates `standalone.html`.
 - `legacy/RobotInventory_v1.jsx` — the previous mock, for reference.
+
+## Iterations since the first rebuild
+
+1. Saved-state migration (old browser saves load on new builds), KPI tiles, S/M/L
+   deployment-slot presets, soft-hold expiry with extend/release, your-name attribution in
+   the ledger, focus window on the grid, backward milestone plan under a positive answer.
+2. One-action rate-change proposals, plan version history, schedule attainment, purchasing
+   gate as policy, show/reopen rejected deployments, conditional flag on reverse lookup.
+3. Engine extracted and unit-tested; repo smoke test.
 
 ## Deliberately not built
 

@@ -2,10 +2,12 @@
   "name": "slip-supply-demand-planner",
   "private": true,
   "version": "2.0.0",
-  "description": "Supply & Demand Planner mock for SlipOS (/mocks/demand-planner) — one page for Sales, Production and Supply Chain.",
+  "description": "Supply & Demand Planner mock for SlipOS (/mocks/demand-planner): one page for Sales, Production and Supply Chain. engine.js holds the tested math; SupplyDemandPlanner.jsx is the UI.",
   "type": "module",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test": "node --test test/engine.test.mjs",
+    "smoke": "node test/smoke.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
