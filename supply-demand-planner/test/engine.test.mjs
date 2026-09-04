@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seedState, migrate, project, includedStages, demandByWeek, atpInfo, atp, iso, toDate, PRODUCTS, STAGES } from "../engine.js";
+import { seedState, migrate, project, includedStages, demandByWeek, atpInfo, atp, iso, toDate, addDays, PRODUCTS, STAGES } from "../engine.js";
 
 /* Projected deployable inventory rows from the 2026 Demand Forecast workbook
    (as carried in the previous mock). The engine must reproduce them exactly
@@ -90,6 +90,15 @@ test("iso() returns the local calendar date, not the UTC one", () => {
   const late = new Date(2026, 8, 4, 23, 30); // Sep 4, 23:30 local
   assert.equal(iso(late), "2026-09-04");
   assert.equal(iso(toDate("2026-06-29")), "2026-06-29");
+});
+
+test("addDays crosses the November DST change without losing a day", () => {
+  const w = toDate("2026-10-26");
+  assert.equal(iso(addDays(w, 7)), "2026-11-02");
+  assert.equal(iso(addDays(w, 14)), "2026-11-09");
+  const s = seedState();
+  assert.equal(s.meta.weeks[18], "2026-11-02");
+  assert.equal(s.meta.weeks[26], "2026-12-28");
 });
 
 test("stage order encodes how locked-in a deployment is", () => {

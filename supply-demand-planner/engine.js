@@ -25,7 +25,7 @@ export const REASONS = {
 
 export const toDate = (iso) => new Date(iso + "T00:00:00");
 export const iso = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); // local calendar date
-export const addDays = (d, n) => new Date(d.getTime() + n * DAY);
+export const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, d.getHours(), d.getMinutes()); // calendar days, DST-safe
 export const uid = () => Math.random().toString(36).slice(2, 9);
 export const zeros = (n) => Array.from({ length: n }, () => 0);
 export const nulls = (n) => Array.from({ length: n }, () => null);
