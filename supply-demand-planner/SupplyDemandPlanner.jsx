@@ -55,6 +55,26 @@ const PRODUCT_META = {
 
 
 
+/* Role lenses: same page, ordered and filtered for the person looking at it. */
+const LENSES = {
+  all:        { label: "Everyone",     owners: null },
+  sales:      { label: "Sales",        owners: ["sales"], title: "Sales: get a date you can say out loud, then hold it",
+                points: ["Type the configuration. The answer already honors every commitment, hold and buffer, so it needs no Slack thread.", "Place a soft hold so no other rep promises the same units. It expires unless the deal moves.", "If the date is later than the customer needs, log the gap. That is how the plan owner learns what we turned away."] },
+  production: { label: "Production",   owners: ["mfg", "planner"], title: "Production & planner: one plan, versioned, measured",
+                points: ["The build plan row is the target the floor executes, under a named version. Edit a future cell to propose a change.", "Key actuals and returns in the supply detail rows by Tuesday EOD. Attainment updates itself.", "Clear the review queue by Monday EOD so Wednesday's consensus meeting starts from accepted demand."] },
+  supply:     { label: "Supply Chain", owners: ["supply"], title: "Supply Chain: know when to buy before the shortage",
+                points: ["The material-release signal lists deployments that crossed the purchasing gate and are inside material lead time.", "Release the buy from the signal; the deployment records it.", "Coverage shows how much room the plan really has before you commit long-lead material."] },
+  leadership: { label: "Leadership",   owners: ["leadership", "finance"], title: "Leadership: approve with the ramifications in view",
+                points: ["Approve is not clickable until delta, consensus number, coverage, capacity, plan-vs-actual and a typed reason are on screen.", "Off-cycle approvals are flagged and counted; three in a quarter triggers a constraint review.", "Finished goods versus the exposure cap and the capacity signal are the two red lines you own."] },
+};
+const LENS_ORDER = {
+  all: ["glance", "ask", "calendar", "charts", "signals", "gaps", "assumptions"],
+  sales: ["ask", "glance", "calendar", "gaps", "signals", "charts", "assumptions"],
+  production: ["glance", "calendar", "signals", "charts", "ask", "gaps", "assumptions"],
+  supply: ["signals", "calendar", "glance", "charts", "ask", "gaps", "assumptions"],
+  leadership: ["glance", "signals", "charts", "calendar", "ask", "gaps", "assumptions"],
+};
+
 const OWNERS = { mfg: "Manufacturing (plan owner)", sales: "Sales", supply: "Supply Chain", finance: "Finance", planner: "Planner", leadership: "Leadership" };
 
 /* ── Dates ──────────────────────────────────────────────────────── */
@@ -121,6 +141,9 @@ export default function SupplyDemandPlanner() {
   const [showSupply, setShowSupply] = useState(false);
   const [focus, setFocus] = useState("all"); // "all" | 8 | 13 weeks from now
   const [showRejected, setShowRejected] = useState(false);
+  const [lens, setLens] = useState(() => { try { const v = window.localStorage.getItem(STORE_KEY + ".lens"); return LENSES[v] ? v : "all"; } catch (e) { return "all"; } });
+  const [showAllSignals, setShowAllSignals] = useState(false);
+  useEffect(() => { try { window.localStorage.setItem(STORE_KEY + ".lens", lens); } catch (e) { /* ignore */ } }, [lens]);
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [askMode, setAskMode] = useState("when");
   const [trayType, setTrayType] = useState("heavy");
@@ -249,6 +272,10 @@ export default function SupplyDemandPlanner() {
     if (missing && nowIdx > 0) out.push({ id: "actuals", sev: "amber", owner: "mfg", title: "Build actuals missing for recent weeks", body: "Plan-vs-actual can't be read. Key actuals in the supply detail rows (toggle below the calendar)." });
     return out.sort((a, b) => (a.sev === b.sev ? 0 : a.sev === "red" ? -1 : 1));
   }, [proj, projNoSoft, state, nowIdx, weeks, protectWeeks, supplyStale, supplyAgeDays]);
+
+  const lensOwners = LENSES[lens].owners;
+  const visibleSignals = useMemo(() => (!lensOwners || showAllSignals ? signals : signals.filter((x) => x.sev === "red" || lensOwners.includes(x.owner))), [signals, lensOwners, showAllSignals]);
+  const hiddenSignals = signals.length - visibleSignals.length;
 
   /* ── Charts ─────────────────────────────────────────────────── */
   const chartData = useMemo(() => {
@@ -414,40 +441,10 @@ export default function SupplyDemandPlanner() {
     { d: 4, k: "Thu", t: "Publish", who: "This page is the pack" },
   ];
 
-  return (
-    <div className="sdp">
-      <style>{CSS}</style>
-
-      {/* ══ Header ══ */}
-      <header className="head">
-        <div>
-          <div className="brand">Slip Robotics</div>
-          <div className="title">Supply &amp; Demand Planner <span className="dim">· Sales · Production · Supply Chain</span></div>
-        </div>
-        <div className="chips">
-          <div className="chip" title={state.plan.note}>Plan <b>{state.plan.version}</b>{state.draft ? <span className="draft-dot" title="Draft edits pending approval"> draft</span> : null}</div>
-          <div className={"chip " + (supplyStale ? "hot" : "ok")} title={"Last keyed by " + state.supply.by}>Supply inputs <b>{supplyAgeDays === 0 ? "today" : supplyAgeDays + "d old"}</b></div>
-          <div className={"chip " + (fgNow > state.params.cap ? "hot" : "ok")}>Finished goods <b>{fmt$k(fgNow)}</b> / {fmt$k(state.params.cap)}</div>
-          <div className="chip">Week of <b>{fmtWeek(weeks[nowIdx])}</b>{nowIdxRaw !== nowIdx ? <span className="dim"> (horizon edge)</span> : null}</div>
-          <input className="who" value={state.user} placeholder="Your name (for the ledger)" aria-label="Your name" onChange={(e) => update((s) => ({ ...s, user: e.target.value }))} />
-        </div>
-      </header>
-
-      <div className="wrap">
-        {/* ══ Cadence strip ══ */}
-        <div className="cadence" role="list" aria-label="Weekly planning cadence">
-          {cadence.map((c) => (
-            <div key={c.k} role="listitem" className={"cad" + (weekday === c.d ? " now" : "")}>
-              <span className="cad-k">{c.k}</span><span className="cad-t">{c.t}</span><span className="cad-w">{c.who}</span>
-            </div>
-          ))}
-          <div className="cad-actions">
-            <button className="btn ghost" onClick={() => copyText(weeklyPack(), "Weekly pack")}>Copy weekly pack</button>
-            <button className="btn ghost" onClick={markSupplyCurrent}>Mark supply inputs keyed</button>
-          </div>
-        </div>
-
-        {/* ══ At a glance ══ */}
+  const sections = {
+    glance: (
+      <>
+{/* ══ At a glance ══ */}
         <div className="kpis">
           {PRODUCTS.map((p) => {
             const e = proj.ending[p]; const first = e.findIndex((v, t) => t >= nowIdx && v < 0);
@@ -470,8 +467,11 @@ export default function SupplyDemandPlanner() {
             <div className="kpi-row"><span>Open signals</span><b className={signals.some((x) => x.sev === "red") ? "hot-text" : ""}>{signals.length}</b></div>
           </div>
         </div>
-
-        {/* ══ 1. Ask (ATP) ══ */}
+      </>
+    ),
+    ask: (
+      <>
+{/* ══ 1. Ask (ATP) ══ */}
         <section className="card ask">
           <div className="card-head">
             <div>
@@ -643,8 +643,11 @@ export default function SupplyDemandPlanner() {
             </div>
           </div>
         </section>
-
-        {/* ══ 2. Calendar ══ */}
+      </>
+    ),
+    calendar: (
+      <>
+{/* ══ 2. Calendar ══ */}
         <section className="card">
           <div className="card-head">
             <div>
@@ -770,8 +773,11 @@ export default function SupplyDemandPlanner() {
             </table>
           </div>
         </section>
-
-        {/* ══ 3. Charts ══ */}
+      </>
+    ),
+    charts: (
+      <>
+{/* ══ 3. Charts ══ */}
         <div className="two">
           <section className="card">
             <h3>Deployable inventory by week{state.draft ? " — draft (solid) vs approved (faint)" : ""}{askMode === "when" && ask && ask.shipWeek != null ? " — this deal overlaid (dashed)" : ""}</h3>
@@ -806,14 +812,21 @@ export default function SupplyDemandPlanner() {
             <div className="hint">Unit values: SlipLift {fmt$(state.products.sl.cost)}, heavy tray {fmt$(state.products.ht.cost)}, light tray {state.products.lt.cost ? fmt$(state.products.lt.cost) : "not set (edit in assumptions)"}.</div>
           </section>
         </div>
-
-        {/* ══ 4. Signals + Governance ══ */}
+      </>
+    ),
+    signals: (
+      <>
+{/* ══ 4. Signals + Governance ══ */}
         <div className="two">
           <section className="card">
-            <div className="card-head"><div><h2>Signals</h2><p className="sub">Every alert names its owner. Nothing here is just a negative cell.</p></div></div>
+            <div className="card-head"><div><h2>Signals</h2><p className="sub">Every alert names its owner. Nothing here is just a negative cell.{lensOwners ? ` Showing ${LENSES[lens].label} plus every red.` : ""}</p></div>
+              {lensOwners && hiddenSignals > 0 && !showAllSignals ? <button className="mini" onClick={() => setShowAllSignals(true)}>Show {hiddenSignals} other{hiddenSignals === 1 ? "" : "s"}</button> : null}
+              {lensOwners && showAllSignals ? <button className="mini" onClick={() => setShowAllSignals(false)}>Only mine</button> : null}
+            </div>
             <div className="signals">
               {signals.length === 0 && <div className="signal ok"><span><b>All clear.</b> Coverage stays above buffer, plan is inside capacity, supply inputs are fresh, the review queue is empty.</span></div>}
-              {signals.map((s) => (
+              {signals.length > 0 && visibleSignals.length === 0 && <div className="signal ok"><span><b>Nothing for {LENSES[lens].label} right now.</b> {hiddenSignals} signal{hiddenSignals === 1 ? "" : "s"} belong to other owners.</span></div>}
+              {visibleSignals.map((s) => (
                 <div key={s.id} className={"signal " + s.sev + (s.ack && state.acks[s.id] ? " acked" : "")}>
                   <div className="sig-body">
                     <div className="sig-title"><b>{s.title}</b><span className="owner">{OWNERS[s.owner]}</span></div>
@@ -907,8 +920,11 @@ export default function SupplyDemandPlanner() {
             <ul className="ledger">{state.ledger.slice(0, 8).map((l) => <li key={l.id}><span className="mono">{l.at}</span> <b>{l.who}</b> {l.what}</li>)}</ul>
           </section>
         </div>
-
-        {/* ══ 5. Demand-gap log ══ */}
+      </>
+    ),
+    gaps: (
+      <>
+{/* ══ 5. Demand-gap log ══ */}
         <section className="card">
           <div className="card-head"><div><h2>Demand we turned away</h2><p className="sub">Logged from the availability check when the offered date was later than the deal needed. This is the plan owner's evidence for a rate change.</p></div></div>
           {state.gaps.length === 0 ? <div className="empty">Nothing logged yet.</div> : (
@@ -919,8 +935,11 @@ export default function SupplyDemandPlanner() {
               ))}</tbody></table>
           )}
         </section>
-
-        {/* ══ 6. Assumptions & data ══ */}
+      </>
+    ),
+    assumptions: (
+      <>
+{/* ══ 6. Assumptions & data ══ */}
         <section className="card">
           <div className="card-head" style={{ cursor: "pointer" }} onClick={() => setShowAssumptions(!showAssumptions)}>
             <div><h2>Assumptions &amp; data {showAssumptions ? "▾" : "▸"}</h2><p className="sub">Unit costs, buffers, capacity, lead times, cap. Export/import the plan as JSON. {saved ? "Autosaved in this browser." : "Autosave unavailable in this browser."}</p></div>
@@ -955,6 +974,54 @@ export default function SupplyDemandPlanner() {
             </div>
           )}
         </section>
+      </>
+    ),
+  };
+
+  return (
+    <div className="sdp">
+      <style>{CSS}</style>
+
+      {/* ══ Header ══ */}
+      <header className="head">
+        <div>
+          <div className="brand">Slip Robotics</div>
+          <div className="title">Supply &amp; Demand Planner <span className="dim">· Sales · Production · Supply Chain</span></div>
+        </div>
+        <div className="chips">
+          <div className="chip" title={state.plan.note}>Plan <b>{state.plan.version}</b>{state.draft ? <span className="draft-dot" title="Draft edits pending approval"> draft</span> : null}</div>
+          <div className={"chip " + (supplyStale ? "hot" : "ok")} title={"Last keyed by " + state.supply.by}>Supply inputs <b>{supplyAgeDays === 0 ? "today" : supplyAgeDays + "d old"}</b></div>
+          <div className={"chip " + (fgNow > state.params.cap ? "hot" : "ok")}>Finished goods <b>{fmt$k(fgNow)}</b> / {fmt$k(state.params.cap)}</div>
+          <div className="chip">Week of <b>{fmtWeek(weeks[nowIdx])}</b>{nowIdxRaw !== nowIdx ? <span className="dim"> (horizon edge)</span> : null}</div>
+          <div className="seg lens" role="group" aria-label="Show this page for">
+            {Object.entries(LENSES).map(([k, v]) => <button key={k} className={lens === k ? "on" : ""} onClick={() => setLens(k)}>{v.label}</button>)}
+          </div>
+          <input className="who" value={state.user} placeholder="Your name (for the ledger)" aria-label="Your name" onChange={(e) => update((s) => ({ ...s, user: e.target.value }))} />
+        </div>
+      </header>
+
+      <div className="wrap">
+        {/* ══ Cadence strip ══ */}
+        <div className="cadence" role="list" aria-label="Weekly planning cadence">
+          {cadence.map((c) => (
+            <div key={c.k} role="listitem" className={"cad" + (weekday === c.d ? " now" : "")}>
+              <span className="cad-k">{c.k}</span><span className="cad-t">{c.t}</span><span className="cad-w">{c.who}</span>
+            </div>
+          ))}
+          <div className="cad-actions">
+            <button className="btn ghost" onClick={() => copyText(weeklyPack(), "Weekly pack")}>Copy weekly pack</button>
+            <button className="btn ghost" onClick={markSupplyCurrent}>Mark supply inputs keyed</button>
+          </div>
+        </div>
+
+                {LENSES[lens].owners && (
+          <section className="card role">
+            <h2>{LENSES[lens].title}</h2>
+            <ol className="role-points">{LENSES[lens].points.map((t, i) => <li key={i}>{t}</li>)}</ol>
+            <div className="hint">{visibleSignals.length} signal{visibleSignals.length === 1 ? "" : "s"} for you right now · sections below are ordered for {LENSES[lens].label}. Switch to Everyone for the full page in the standard order.</div>
+          </section>
+        )}
+        {LENS_ORDER[lens].map((k) => <React.Fragment key={k}>{sections[k]}</React.Fragment>)}
 
         <div className="foot">
           Who this is for: <b>Sales</b> gets a date and reserves it in one place. <b>Production</b> sees the plan it builds to and keys actuals against a named version. <b>Supply Chain</b> sees when material is released. <b>Leadership</b> approves plan changes with the ramifications in view. Dates are planning promises, not contractual delivery dates.
@@ -1028,6 +1095,10 @@ const CSS = `
 .chip b{color:${T.text};font-weight:600;}
 .chip.ok{border-color:#1E4636;color:#7EDDB4;background:#0E1E18;}
 .chip.hot{border-color:#4A2626;color:#F5A19B;background:#1E1112;}
+.seg.lens button{font-size:11px;padding:6px 9px;}
+.card.role{border-color:${T.indigo};background:#12142A;}
+.role-points{margin:10px 0 0;padding-left:20px;font-size:12.5px;color:${T.sub};line-height:1.6;display:grid;gap:4px;}
+.role-points li::marker{color:${T.indigoSoft};font-weight:700;}
 .who{font:500 12px 'Inter';padding:7px 10px;border:1px solid ${T.border};border-radius:8px;background:${T.inset};color:${T.text};width:190px;}
 .who::placeholder{color:${T.muted};}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px;}
