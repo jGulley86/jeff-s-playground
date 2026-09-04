@@ -142,7 +142,7 @@ function seedState() {
     acks: {},
     planHistory: [],
     user: "",
-    params: { cap: 1000000, leadWeeks: 8, protectWeeks: 8, materialLeadWeeks: 10, holdDays: 14, kitHeavy: 3, kitLight: 4, countSoft: true, countNegotiation: true },
+    params: { cap: 1000000, leadWeeks: 8, protectWeeks: 8, materialLeadWeeks: 10, holdDays: 14, purchaseGate: "contract", kitHeavy: 3, kitLight: 4, countSoft: true, countNegotiation: true },
   };
 }
 
@@ -284,6 +284,7 @@ export default function SupplyDemandPlanner() {
   const [editing, setEditing] = useState(null);   // deployment being edited (object) or "new"
   const [showSupply, setShowSupply] = useState(false);
   const [focus, setFocus] = useState("all"); // "all" | 8 | 13 weeks from now
+  const [showRejected, setShowRejected] = useState(false);
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [askMode, setAskMode] = useState("when");
   const [trayType, setTrayType] = useState("heavy");
@@ -293,6 +294,7 @@ export default function SupplyDemandPlanner() {
   const [neededWeek, setNeededWeek] = useState("");
   const [targetWeek, setTargetWeek] = useState(null); // null → first realistic week (now + lead time)
   const [holdName, setHoldName] = useState("");
+  const [ramp, setRamp] = useState({ p: "sl", rate: 3, from: null, to: null });
   const fileRef = useRef(null);
 
   /* autosave */
@@ -364,9 +366,11 @@ export default function SupplyDemandPlanner() {
     const tgt = targetWeek == null ? nowIdx + leadWeeks : targetWeek;
     const w = Math.max(tgt, nowIdx + leadWeeks);
     if (w >= N) return { maxLifts: 0, maxTrays: 0, kits: 0, week: N - 1, pushed: true };
-    const maxLifts = atpOf("sl", w), maxTrays = atpOf(trayKey, w);
-    return { maxLifts, maxTrays, kits: Math.min(maxLifts, Math.floor(maxTrays / RATIO)), week: w, pushed: w !== tgt };
-  }, [askMode, targetWeek, nowIdx, leadWeeks, N, atpOf, trayKey, RATIO]);
+    const li = atpInfoOf("sl", w), ti = atpInfoOf(trayKey, w);
+    const maxLifts = li.qty, maxTrays = ti.qty;
+    const cond = [li.cond ? "sl" : null, ti.cond ? trayKey : null].filter(Boolean);
+    return { maxLifts, maxTrays, kits: Math.min(maxLifts, Math.floor(maxTrays / RATIO)), week: w, pushed: w !== tgt, cond };
+  }, [askMode, targetWeek, nowIdx, leadWeeks, N, atpInfoOf, trayKey, RATIO]);
 
   const neededIdx = neededWeek === "" ? null : +neededWeek;
   const gapWeeks = ask && ask.shipWeek != null && neededIdx != null ? ask.shipWeek - neededIdx : 0;
@@ -400,8 +404,9 @@ export default function SupplyDemandPlanner() {
     if (supplyStale) out.push({ id: "stale", sev: "red", owner: "mfg", title: `Supply inputs are ${supplyAgeDays} days old`, body: "Build actuals, returns, and catch-up are due Tuesday EOD. Plan approval is blocked while inputs are older than 7 days." });
     const proposed = state.demand.filter((d) => d.review === "proposed");
     if (proposed.length) out.push({ id: "queue", sev: "amber", owner: "planner", title: `${proposed.length} deployment${proposed.length > 1 ? "s" : ""} awaiting review`, body: "Accept, amend, or reject before Monday EOD so the queue is clear for Wednesday's consensus meeting.", queue: proposed });
-    const release = state.demand.filter((d) => ["po", "contract"].includes(d.stage) && d.review !== "rejected" && !d.materialReleased && d.week - state.params.materialLeadWeeks <= nowIdx + 2);
-    if (release.length) out.push({ id: "release", sev: "amber", owner: "supply", title: `Material release due for ${release.length} deployment${release.length > 1 ? "s" : ""}`, body: release.map((d) => `${d.customer} ${fmtWeek(weeks[d.week])}`).join(", ") + ` — contract in hand and inside the ${state.params.materialLeadWeeks}-week material lead time. Release the buy.`, release });
+    const gateOrder = STAGES[state.params.purchaseGate] ? STAGES[state.params.purchaseGate].order : STAGES.contract.order;
+    const release = state.demand.filter((d) => STAGES[d.stage].order <= gateOrder && d.review !== "rejected" && !d.materialReleased && d.week - state.params.materialLeadWeeks <= nowIdx + 2);
+    if (release.length) out.push({ id: "release", sev: "amber", owner: "supply", title: `Material release due for ${release.length} deployment${release.length > 1 ? "s" : ""}`, body: release.map((d) => `${d.customer} ${fmtWeek(weeks[d.week])} (${STAGES[d.stage].label})`).join(", ") + ` — at or past the purchasing gate (${STAGES[state.params.purchaseGate].label}) and inside the ${state.params.materialLeadWeeks}-week material lead time. Release the buy.`, release });
     const expired = state.demand.filter((d) => d.stage === "soft" && d.review !== "rejected" && d.expiresAt && toDate(d.expiresAt) < today);
     if (expired.length) out.push({ id: "expired", sev: "amber", owner: "planner", title: `${expired.length} soft hold${expired.length > 1 ? "s" : ""} past expiry`, body: `Holds last ${state.params.holdDays} days unless the deal moves to negotiation. Release the units or extend if the deal is alive.`, expired });
     const missing = PRODUCTS.some((p) => state.actuals[p].slice(Math.max(0, nowIdx - 4), nowIdx).some((v) => v == null));
@@ -470,11 +475,18 @@ export default function SupplyDemandPlanner() {
   const approve = () => update((s) => {
     if (!s.draft) return s;
     const ver = "P-" + iso(today) + (offCycle ? "-OC" : "");
-    const plan = { version: ver, approvedBy: "Jeff Gulley", approvedAt: iso(today), supersedes: s.plan.version, reasonType: s.draft.reasonType, note: s.draft.note, offCycle: offCycle, builds: s.draft.builds };
+    const plan = { version: ver, approvedBy: s.user || "Jeff Gulley", approvedAt: iso(today), supersedes: s.plan.version, reasonType: s.draft.reasonType, note: s.draft.note, offCycle: offCycle, changed: draftDelta.length, builds: s.draft.builds };
     const what = `Approved plan ${ver} (supersedes ${s.plan.version}) — ${REASONS[s.draft.reasonType]}${offCycle ? " — OFF-CYCLE override" : ""}${s.draft.note ? ": " + s.draft.note : ""}. ${draftDelta.length} cell${draftDelta.length === 1 ? "" : "s"} changed.`;
-    return log({ ...s, plan, draft: null }, "Jeff Gulley", what);
+    return log({ ...s, plan, draft: null, planHistory: [s.plan, ...(s.planHistory || [])].slice(0, 20) }, "Approver", what);
   });
   const discardDraft = () => update((s) => ({ ...s, draft: null }));
+  const applyRamp = () => update((s) => {
+    const from = ramp.from == null ? nowIdx : ramp.from, to = ramp.to == null ? N - 1 : ramp.to;
+    if (to < from) return s;
+    const draft = s.draft ? { ...s.draft, builds: { ...s.draft.builds } } : { builds: { ...s.plan.builds }, reasonType: "", note: "" };
+    draft.builds[ramp.p] = draft.builds[ramp.p].map((v, t) => (t >= Math.max(from, nowIdx) && t <= to ? clampInt(ramp.rate, 0, 99) : v));
+    return { ...s, draft };
+  });
   const saveDeployment = (d) => update((s) => {
     const exists = s.demand.some((x) => x.id === d.id);
     const demand = exists ? s.demand.map((x) => (x.id === d.id ? d : x)) : [d, ...s.demand];
@@ -552,7 +564,8 @@ export default function SupplyDemandPlanner() {
   /* ── Renders ────────────────────────────────────────────────── */
   const view = useMemo(() => weeks.map((_, i) => i).filter((i) => focus === "all" || (i >= Math.max(0, nowIdx - 1) && i < nowIdx + focus)), [weeks, focus, nowIdx]);
   const vweeks = useMemo(() => view.map((i) => [weeks[i], i]), [view, weeks]);
-  const sortedDemand = useMemo(() => [...state.demand].filter((d) => d.review !== "rejected" && (focus === "all" || view.includes(d.week))).sort((a, b) => a.week - b.week || STAGES[a.stage].order - STAGES[b.stage].order), [state.demand, focus, view]);
+  const sortedDemand = useMemo(() => [...state.demand].filter((d) => (showRejected || d.review !== "rejected") && (focus === "all" || view.includes(d.week))).sort((a, b) => a.week - b.week || STAGES[a.stage].order - STAGES[b.stage].order), [state.demand, focus, view, showRejected]);
+  const rejectedCount = state.demand.filter((d) => d.review === "rejected").length;
   const cellClass = (v, buffer) => (v < 0 ? "neg" : v < buffer ? "buf" : "ok");
   const hardShort = PRODUCTS.map((p) => projHard.ending[p].slice(nowIdx).some((v) => v < 0));
   const fgNow = PRODUCTS.reduce((s, p) => s + Math.max(0, proj.ending[p][nowIdx]) * state.products[p].cost, 0);
@@ -737,6 +750,7 @@ export default function SupplyDemandPlanner() {
                     <div className="tag-detail">
                       Raw ceilings that week: {reverse.maxLifts} SlipLifts and {reverse.maxTrays} {trayLabel}, after commitments, holds, and buffer.
                       {reverse.pushed ? ` Your target sits inside the ${leadWeeks}-week site-readiness window, so this is the first realistic go-live.` : ""}
+                      {reverse.kits > 0 && reverse.cond.length ? <span className="gap-note"> Conditional: a promise here deepens an existing later shortfall in {reverse.cond.map((p) => PRODUCT_META[p].plural).join(" and ")}.</span> : null}
                     </div>
                   </div>
                 )}
@@ -805,6 +819,7 @@ export default function SupplyDemandPlanner() {
               </div>
               <button className="btn" onClick={() => setEditing("new")}>+ Add deployment</button>
               <label className="link-toggle"><input type="checkbox" checked={showSupply} onChange={(e) => setShowSupply(e.target.checked)} /> Supply detail rows</label>
+              {rejectedCount > 0 && <label className="link-toggle"><input type="checkbox" checked={showRejected} onChange={(e) => setShowRejected(e.target.checked)} /> Show rejected ({rejectedCount})</label>}
             </div>
           </div>
           <div className="legend">
@@ -831,9 +846,9 @@ export default function SupplyDemandPlanner() {
               </thead>
               <tbody>
                 {sortedDemand.map((d) => (
-                  <tr key={d.id} className={"dep" + (d.review === "proposed" ? " proposed" : "")} onClick={() => setEditing(d)} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setEditing(d); }}>
+                  <tr key={d.id} className={"dep" + (d.review === "proposed" ? " proposed" : "") + (d.review === "rejected" ? " rejected" : "")} onClick={() => setEditing(d)} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setEditing(d); }}>
                     <td className="sticky lbl">
-                      <div className="cust">{d.customer}{d.review === "proposed" ? <span className="rev" title="Awaiting planner review">review</span> : null}</div>
+                      <div className="cust">{d.customer}{d.review === "proposed" ? <span className="rev" title="Awaiting planner review">review</span> : null}{d.review === "rejected" ? <span className="rev rej">rejected</span> : null}</div>
                       <div className="site"><StageChip stage={d.stage} />{d.site ? <span className="dim"> {d.site}</span> : null}{d.stage === "soft" && d.expiresAt ? <span className={"dim" + (toDate(d.expiresAt) < today ? " hot-text" : "")}> · {toDate(d.expiresAt) < today ? "expired" : "expires " + fmtWeek(d.expiresAt)}</span> : null}</div>
                     </td>
                     {vweeks.map(([w, i]) => (
@@ -996,7 +1011,15 @@ export default function SupplyDemandPlanner() {
               <div className="consensus"><span className="k">Signed consensus number</span><input value={state.consensus} placeholder="e.g. Q4 2026: 20 SlipLifts / 60 HT / 16 LT" onChange={(e) => update((s) => ({ ...s, consensus: e.target.value }))} /></div>
             </div>
 
-            {!state.draft && <div className="empty">No draft. Edit any future build cell in the calendar to propose a change.</div>}
+            <div className="ramp">
+              <span className="ramp-k">Propose a rate change</span>
+              <select value={ramp.p} onChange={(e) => setRamp({ ...ramp, p: e.target.value })} aria-label="Product">{PRODUCTS.map((p) => <option key={p} value={p}>{PRODUCT_META[p].name}</option>)}</select>
+              <label>to <input type="number" min="0" max="99" value={ramp.rate} onChange={(e) => setRamp({ ...ramp, rate: clampInt(e.target.value, 0, 99) })} aria-label="Units per week" /> / wk</label>
+              <label>from <select value={ramp.from == null ? nowIdx : ramp.from} onChange={(e) => setRamp({ ...ramp, from: +e.target.value })} aria-label="From week">{weeks.map((w, i) => (i >= nowIdx ? <option key={w} value={i}>{fmtWeek(w)}</option> : null))}</select></label>
+              <label>through <select value={ramp.to == null ? N - 1 : ramp.to} onChange={(e) => setRamp({ ...ramp, to: +e.target.value })} aria-label="Through week">{weeks.map((w, i) => (i >= nowIdx ? <option key={w} value={i}>{fmtWeek(w)}</option> : null))}</select></label>
+              <button className="btn ghost" onClick={applyRamp}>Apply to draft</button>
+            </div>
+            {!state.draft && <div className="empty">No draft. Edit any future build cell in the calendar, or propose a rate change above.</div>}
             {state.draft && (
               <div className="draft">
                 <div className="draft-head"><b>Draft plan</b>{offCycle ? <span className="oc">off-cycle override (today is not Wednesday)</span> : <span className="onc">on cadence</span>}</div>
@@ -1028,11 +1051,19 @@ export default function SupplyDemandPlanner() {
               </div>
             )}
 
-            <h4>Plan vs actual — last 4 weeks</h4>
+            <h4>Plan vs actual — last 4 weeks · schedule attainment</h4>
             <table className="pva"><thead><tr><th>Week</th>{PRODUCTS.map((p) => <th key={p} style={{ color: PRODUCT_META[p].color }}>{PRODUCT_META[p].short} plan / actual</th>)}</tr></thead>
               <tbody>{nowIdx === 0 ? <tr><td colSpan={4} className="dim">Horizon starts this week.</td></tr> : weeks.slice(Math.max(0, nowIdx - 4), nowIdx).map((w, j) => { const i = Math.max(0, nowIdx - 4) + j; return (
                 <tr key={w}><td>{fmtWeek(w)}</td>{PRODUCTS.map((p) => { const a = state.actuals[p][i]; const pl = state.plan.builds[p][i]; return <td key={p} className={"n " + (a == null ? "dim" : a < pl ? "neg" : "")}>{pl} / {a == null ? "–" : a}</td>; })}</tr>
-              ); })}</tbody></table>
+              ); })}
+              {nowIdx > 0 && <tr className="total"><td>Attainment</td>{PRODUCTS.map((p) => { const lo = Math.max(0, nowIdx - 4); let pl = 0, ac = 0, keyed = 0; for (let i = lo; i < nowIdx; i++) { pl += state.plan.builds[p][i]; if (state.actuals[p][i] != null) { ac += state.actuals[p][i]; keyed++; } } const pct = keyed === 0 ? null : pl === 0 ? 100 : Math.round((ac / pl) * 100); return <td key={p} className={"n " + (pct == null ? "dim" : pct < 90 ? "neg" : "")}>{pct == null ? "not keyed" : pct + "%"}{keyed && keyed < nowIdx - lo ? <small className="dim"> ({keyed}/{nowIdx - lo} wks)</small> : null}</td>; })}</tr>}
+              </tbody></table>
+
+            <h4>Plan versions</h4>
+            <ul className="versions">
+              <li><span className="mono">{state.plan.version}</span> <b>in force</b> · {state.plan.approvedAt} · {state.plan.approvedBy} · {REASONS[state.plan.reasonType] || "—"}{state.plan.offCycle ? <span className="oc"> · off-cycle</span> : null}{state.plan.changed != null ? <span className="dim"> · {state.plan.changed} cells vs {state.plan.supersedes}</span> : null}</li>
+              {(state.planHistory || []).map((v) => <li key={v.version + v.approvedAt} className="dim"><span className="mono">{v.version}</span> superseded · {v.approvedAt} · {v.approvedBy} · {REASONS[v.reasonType] || "—"}{v.offCycle ? <span className="oc"> · off-cycle</span> : null}</li>)}
+            </ul>
 
             <h4>Ledger</h4>
             <ul className="ledger">{state.ledger.slice(0, 8).map((l) => <li key={l.id}><span className="mono">{l.at}</span> <b>{l.who}</b> {l.what}</li>)}</ul>
@@ -1069,6 +1100,8 @@ export default function SupplyDemandPlanner() {
                 ))}
                 <div className="assump-card">
                   <h4>Policy</h4>
+                  <label className="row"><span>Purchasing gate (material may be ordered at)</span>
+                    <select value={state.params.purchaseGate} onChange={(e) => update((s) => ({ ...s, params: { ...s.params, purchaseGate: e.target.value } }))}>{["po", "contract", "negotiation"].map((k) => <option key={k} value={k}>{STAGES[k].label}</option>)}</select></label>
                   {[["leadWeeks", "Site-readiness lead time (weeks)"], ["protectWeeks", "Protect commitments for (weeks)"], ["materialLeadWeeks", "Material lead time (weeks)"], ["holdDays", "Soft hold expiry (days)"], ["kitHeavy", "Heavy trays per lift"], ["kitLight", "Light trays per lift"], ["cap", "Finished-goods exposure cap $"]].map(([k, lbl]) => (
                     <label key={k} className="row"><span>{lbl}</span><input type="number" value={state.params[k]} onChange={(e) => update((s) => ({ ...s, params: { ...s.params, [k]: Number(e.target.value) || 0 } }))} /></label>
                   ))}
@@ -1353,6 +1386,17 @@ table.gaps td.cust{color:${T.text};font-weight:600;}
 .checklist li.ok .tick{color:${T.green};font-weight:700;}
 .checklist li.no .tick{color:${T.red};font-weight:700;}
 .checklist li.no{color:${T.text};}
+.ramp{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border:1px solid ${T.borderSoft};border-radius:8px;background:${T.inset};font-size:12px;color:${T.sub};}
+.ramp-k{font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:${T.muted};margin-right:4px;}
+.ramp label{display:flex;gap:6px;align-items:center;}
+.ramp input{width:56px;font:600 12px 'JetBrains Mono',monospace;padding:6px 8px;border:1px solid ${T.border};border-radius:6px;background:${T.panel};color:${T.text};text-align:center;}
+.ramp select{padding:6px 8px;font-size:12px;}
+.versions{list-style:none;margin:0;padding:0;font-size:12px;color:${T.sub};display:grid;gap:5px;}
+.versions b{color:${T.green};}
+table.pva tr.total td{border-top:1px solid ${T.border};font-weight:700;color:${T.text};}
+table.grid tr.rejected{opacity:.45;}
+table.grid tr.rejected .cust{text-decoration:line-through;}
+.rev.rej{color:${T.red};border-color:${T.red};text-decoration:none;}
 .ledger{list-style:none;margin:0;padding:0;font-size:12px;color:${T.sub};display:grid;gap:5px;}
 .ledger b{color:${T.text};}
 .empty{font-size:12px;color:${T.muted};padding:10px 4px;line-height:1.5;}
