@@ -1,0 +1,24 @@
+{
+  "agent": "orchestrator",
+  "permissions": {
+    "deny": [
+      "Agent(Explore)",
+      "Agent(Plan)",
+      "Agent(general-purpose)",
+      "Agent(fork)",
+      "Bash(git push *)",
+      "Bash(git push)",
+      "Bash(gh pr merge *)",
+      "Bash(gh release *)",
+      "Bash(npm publish *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(rm -rf *)",
+      "Bash(ssh *)",
+      "Bash(scp *)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "1"
+  }
+}
