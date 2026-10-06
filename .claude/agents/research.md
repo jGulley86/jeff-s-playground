@@ -1,7 +1,7 @@
 ---
 name: research
 description: Finds and sources reliable information for the orchestrator. Returns concise research notes with every claim linked to evidence. Read-only except for its own notes file.
-tools: Read, Grep, Glob, WebSearch, WebFetch, Write
+tools: Read, Grep, Glob, WebSearch, WebFetch, Write, mcp__claude_ai_CRM_-_Sales__crm_whoami, mcp__claude_ai_CRM_-_Sales__crm_search, mcp__claude_ai_CRM_-_Sales__crm_query_records, mcp__claude_ai_CRM_-_Sales__crm_get_record, mcp__claude_ai_CRM_-_Sales__crm_get_queryable_fields, mcp__claude_ai_CRM_-_Sales__crm_get_opportunity_context, mcp__claude_ai_CRM_-_Sales__crm_get_activity_timeline
 model: sonnet
 color: green
 ---
