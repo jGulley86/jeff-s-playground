@@ -1,0 +1,6 @@
+[builder.md](https://github.com/user-attachments/files/33111211/builder.md)
+[critic.md](https://github.com/user-attachments/files/33111212/critic.md)[verifier.md](https://github.com/user-attachments/files/33111218/verifier.md)
+[settings.json](https://github.com/user-attachments/files/33111217/settings.json)
+[research.md](https://github.com/user-attachments/files/33111215/research.md)
+[README.md](https://github.com/user-attachments/files/33111214/README.md)
+[orchestrator.md](https://github.com/user-attachments/files/33111213/orchestrator.md)
