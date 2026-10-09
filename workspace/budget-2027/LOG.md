@@ -16,3 +16,4 @@
 | T11 | build | builder | started | v3 per brief_v2 + brief_v3 (DeploySum refresh, revenue, depreciation). v2 verification folded into v3 verify |
 | T12 | build | builder | done | v3: NI 2027 +393,486; rev 15.56M; dep 3.32M (existing 1.91M + new 1.41M); 4 user decisions open (I-01, I-31, I-32, I-33) |
 | T13 | review+verify | critic, verifier | started | parallel on v3 |
+| T14 | verify | verifier | done | v3 PASS — 04-verify/04-verify_report_v3.md |
