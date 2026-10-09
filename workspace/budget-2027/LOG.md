@@ -21,3 +21,5 @@
 | T16 | build | builder | started | v4 notes-only fix (no value changes): B1 + O1–O8; Collation Notes sheet refresh |
 | T17 | build | builder | done | v4: notes/Collation Notes only; 0 diffs vs v3 (27,700 cells); caveat table; sign-flip: negative on I-05 or I-17 alone |
 | T18 | review | critic | started | re-check v4 vs critic v3 items |
+| T19 | review | critic | done | v4: 0 BLOCKING / 3 OPTIONAL — 03-review/03-review_critic_v4.md |
+| T20 | final | orchestrator | done | 05-final/ (FINAL xlsx = v4, notes, FINAL_REPORT.md). Status COMPLETED; owner decisions open |
