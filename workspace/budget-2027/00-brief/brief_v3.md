@@ -12,7 +12,7 @@ C. Depreciation: straight-line, SlipLift 7 yrs (84 months), SlipTray 10 yrs (120
    - In-service = go-live month (DeploySum rows 19/20 units going live). Depreciation starts in the go-live month (full-month convention, labelled; the user may change it).
    - Existing fleet (in service before Jan-27, including Sep–Dec 26 go-lives): it must not be double-counted against the 2026 run rate. Use the PO 2026 monthly depreciation (rows 19–22, B:M) to show what the existing fleet runs at. Carry it as a separate, labelled input line.
    - Units deployed Sep–Dec 26 are either in that run rate already or added explicitly; show which and why.
-   - GL mapping is an assumption to label: SlipLift → 5011. SlipTray → choose between 5012 SlipCarrier and 5020 Peripherals based on the 2026 history, and flag the choice. SlipBot 5010: none built in 2027; existing SlipBot depreciation is handled per the existing-fleet rule above.
+   - GL mapping is an assumption to label: SlipLift → 5011. SlipTray → 5012 SlipCarrier Depreciation (user confirmed 2026-10-09: "Trays = carriers"). SlipBot 5010: none built in 2027; existing SlipBot depreciation is handled per the existing-fleet rule above.
 D. Notes: headline shows full 2027 Net Income (now with revenue and depreciation), the cost-only view, and the 2026 comparison. Update I-01 and I-07 to resolved-by-assumption and add the new assumptions to the issues/assumptions list.
 
 ## Unchanged

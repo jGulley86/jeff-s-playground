@@ -11,3 +11,4 @@
 | T6 | build | builder | started | v2 fixes: B1–B3 + optionals 1–8,10 |
 | T7 | brief | orchestrator | done | brief_v2.md: third input (resolved DeploySum 9/30/26); v3 build queued after v2 |
 | T8 | brief | orchestrator | done | brief_v3.md: user chose Option 3 (revenue + SL depreciation, Lift 7y / Tray 10y); v3 build queued after v2 returns |
+| T9 | brief | orchestrator | done | user confirmed Trays = Carriers → 5012 |
