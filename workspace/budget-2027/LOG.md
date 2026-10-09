@@ -17,3 +17,5 @@
 | T12 | build | builder | done | v3: NI 2027 +393,486; rev 15.56M; dep 3.32M (existing 1.91M + new 1.41M); 4 user decisions open (I-01, I-31, I-32, I-33) |
 | T13 | review+verify | critic, verifier | started | parallel on v3 |
 | T14 | verify | verifier | done | v3 PASS — 04-verify/04-verify_report_v3.md |
+| T15 | review | critic | done | v3: 1 BLOCKING (headline caveats) / 8 OPTIONAL — 03-review/03-review_critic_v3.md |
+| T16 | build | builder | started | v4 notes-only fix (no value changes): B1 + O1–O8; Collation Notes sheet refresh |
