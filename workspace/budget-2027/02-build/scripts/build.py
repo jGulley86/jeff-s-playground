@@ -1,7 +1,7 @@
 """Build the collated 2027 COO budget workbook.
 
 Usage:
-  python3 -I build.py COO_BOOK SD_BOOK OUT_XLSX EXTREFS_JSON [NOTES_JSON]
+  python3 -I build.py COO_BOOK SD_BOOK OUT_XLSX EXTREFS_JSON [NOTES_JSON] [--mark-frozen-zeros]
 
 - Base = COO book (loaded with formulas).
 - COO FO / FE are replaced by SD FO / FE (cell-by-cell copy: value/formula + style).
@@ -9,6 +9,9 @@ Usage:
 - Formulas that reference an external workbook ("[n]Sheet") are replaced by the SD
   book's cached value; every such cell is logged to EXTREFS_JSON.
 - If NOTES_JSON is given, a "Collation Notes" sheet is inserted at the front.
+- --mark-frozen-zeros (v2): every frozen external-link cell whose stored value is not an error
+  (e.g. cached zeros) gets a cell comment FROZEN_NOTE, so it is not read as data.
+  Without the flag the output is the v1 build.
 Inputs are only read, never written.
 """
 import sys, re, json, copy
@@ -17,9 +20,14 @@ from openpyxl.worksheet.formula import ArrayFormula
 from openpyxl.cell.cell import MergedCell
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.comments import Comment
 
-COO_PATH, SD_PATH, OUT_PATH, EXT_JSON = sys.argv[1:5]
-NOTES_JSON = sys.argv[5] if len(sys.argv) > 5 else None
+FLAGS = {a for a in sys.argv[1:] if a.startswith("--")}
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+COO_PATH, SD_PATH, OUT_PATH, EXT_JSON = ARGS[0:4]
+NOTES_JSON = ARGS[4] if len(ARGS) > 4 else None
+MARK_FROZEN = "--mark-frozen-zeros" in FLAGS
+FROZEN_NOTE = "stale external-link value \u2013 not real data"
 
 REPLACE = ["FO", "FE"]
 SHEET_REF = re.compile(r"(?:'((?:[^']|'')+)'|([A-Za-z0-9_\.\[\]]+))!")
@@ -198,6 +206,17 @@ def main():
         dst = coo.create_sheet(s)
         copy_sheet(sd[s], dst, sd_v[s], ext_log)
 
+    marked = []
+    if MARK_FROZEN:
+        for e in ext_log:
+            st = e["stored"]
+            if isinstance(st, str) and st in EXCEL_ERRORS:
+                continue
+            c = coo[e["sheet"]][e["cell"]]
+            assert c.comment is None, f"{e['sheet']}!{e['cell']} already has a comment"
+            c.comment = Comment(FROZEN_NOTE, "collation v2")
+            marked.append(f"{e['sheet']}!{e['cell']}")
+
     if NOTES_JSON:
         with open(NOTES_JSON) as fh:
             add_notes_sheet(coo, json.load(fh))
@@ -210,9 +229,10 @@ def main():
 
     coo.save(OUT_PATH)
     with open(EXT_JSON, "w") as fh:
-        json.dump({"carried": carry, "support": support, "external_cells": ext_log}, fh, indent=1, default=str)
+        json.dump({"carried": carry, "support": support, "external_cells": ext_log,
+                   "frozen_marked": marked, "frozen_note": FROZEN_NOTE if MARK_FROZEN else None}, fh, indent=1, default=str)
     print("carried:", carry)
-    print("external-ref cells replaced by cached values:", len(ext_log))
+    print("external-ref cells replaced by cached values:", len(ext_log), "| frozen non-error cells commented:", len(marked))
     print("sheets:", coo.sheetnames)
 
 

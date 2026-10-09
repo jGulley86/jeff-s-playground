@@ -12,3 +12,5 @@
 | T7 | brief | orchestrator | done | brief_v2.md: third input (resolved DeploySum 9/30/26); v3 build queued after v2 |
 | T8 | brief | orchestrator | done | brief_v3.md: user chose Option 3 (revenue + SL depreciation, Lift 7y / Tray 10y); v3 build queued after v2 returns |
 | T9 | brief | orchestrator | done | user confirmed Trays = Carriers → 5012 |
+| T10 | build | builder | done | v2: 0 value diffs vs v1; names 14,310→8,965; 0 externalLink parts; overlap table (0 likely double counts); I-17 Logistics&WH up to 547,441 HIGH; new I-26..I-29 |
+| T11 | build | builder | started | v3 per brief_v2 + brief_v3 (DeploySum refresh, revenue, depreciation). v2 verification folded into v3 verify |
