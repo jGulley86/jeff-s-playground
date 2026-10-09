@@ -28,3 +28,4 @@
 | T23 | build | builder | done | v5: HoSD 205k in Fld Eng Budget!B21; contribution 393,486 → 139,032 (−254,454 incl. SD burden 6.8%/16.4%); critic N1–N3 applied |
 | T24 | verify | verifier | started | v5 |
 | T24 | build | builder | started | v6 per brief_v4 (HC roster reconciliation), parallel with v5 verify |
+| T25 | verify | verifier | done | v5 PASS — 04-verify/04-verify_report_v5.md |
