@@ -25,3 +25,6 @@
 | T20 | final | orchestrator | done | 05-final/ (FINAL xlsx = v4, notes, FINAL_REPORT.md). Status COMPLETED; owner decisions open |
 | T21 | build | builder | started | v5: user-confirmed HoSD salary 205,000 → Fld Eng Budget!B21 (resolves I-26) + critic v4 N1–N3 |
 | T22 | brief | orchestrator | done | brief_v4.md: 4th input COO HC & PL workfile (rosters); v6 reconciliation queued after v5 |
+| T23 | build | builder | done | v5: HoSD 205k in Fld Eng Budget!B21; contribution 393,486 → 139,032 (−254,454 incl. SD burden 6.8%/16.4%); critic N1–N3 applied |
+| T24 | verify | verifier | started | v5 |
+| T24 | build | builder | started | v6 per brief_v4 (HC roster reconciliation), parallel with v5 verify |

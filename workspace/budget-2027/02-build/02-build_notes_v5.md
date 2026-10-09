@@ -304,7 +304,7 @@ Status cell DeploySum!A76: 'Tie-out rows 16-21 vs 54-64: OK'. FY27: deployments 
 
 The one 'formula diff' is Fld Eng Budget!B21 (empty -> 205,000, a typed input: diff_versions.py compares cell contents). Cells whose formula text changed: 0.
 
-Classification of the 426 value diffs: input cells 1 (Fld Eng Budget!B21); formula cells downstream of B21 425; anything else 0. Static trace: 490 formula cells can depend on B21 ({'Fld Eng Budget': 129, 'FE': 170, 'COO P&L': 182, 'Collation Notes': 9}); 56 of them did not change value; the Collation Notes ones are regenerated. Of the recalculated downstream cells, 2 moved by <= 1e-6 only. Recalculation noise outside the trace (left at the v4 value, not a change): 40 cells, max abs 9.9e-08, sheets {'COO P&L': 20, 'PO': 20}.
+Classification of the 426 value diffs: input cells 1 (Fld Eng Budget!B21); formula cells downstream of B21 425; anything else 0. Static trace: 490 formula cells can depend on B21 ({'COO P&L': 182, 'Collation Notes': 9, 'FE': 170, 'Fld Eng Budget': 129}); 56 of them did not change value; the Collation Notes ones are regenerated. Of the recalculated downstream cells, 2 moved by <= 1e-6 only. Recalculation noise outside the trace (left at the v4 value, not a change): 40 cells, max abs 9.9e-08, sheets {'COO P&L': 20, 'PO': 20}.
 
 Comments added / removed / changed: 0 / 0 / 0. Sheets only in v4 / only in v5: none / none. Package: 34 of 38 parts byte-identical to v4; changed: xl/worksheets/sheet6.xml, xl/worksheets/sheet13.xml, xl/worksheets/sheet2.xml, xl/worksheets/sheet1.xml; added: none; removed: none.
 
