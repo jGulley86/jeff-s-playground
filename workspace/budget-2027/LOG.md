@@ -9,3 +9,4 @@
 | T4 | verify | verifier | done | PASS — 04-verify/04-verify_report_v1.md |
 | T5 | review | critic | done | 3 BLOCKING / 10 OPTIONAL — 03-review/03-review_critic_v1.md; B1 partly overruled (handoff did instruct freeze) |
 | T6 | build | builder | started | v2 fixes: B1–B3 + optionals 1–8,10 |
+| T7 | brief | orchestrator | done | brief_v2.md: third input (resolved DeploySum 9/30/26); v3 build queued after v2 |
