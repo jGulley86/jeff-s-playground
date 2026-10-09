@@ -32,3 +32,5 @@
 | T26 | build | builder | done | v6: 0 diffs vs v5; HC tabs added; I-05 net 1,962,389; I-17 net 336,530; FO current 1,338,696 / ramp 2,618,543; 1 duplicate person (FE r15 = FO HC r15); FE burden +109,539; PE transfer 254,785. Roster CSV (per-person salaries) kept out of git |
 | T27 | review+verify | critic, verifier | started | v6 parallel |
 | T28 | review | critic | done | v6: 3 BLOCKING / 8 OPTIONAL — 03-review/03-review_critic_v6.md; awaiting verifier before v7 |
+| T29 | verify | verifier | done | v6 FIX FIRST: I-28 FO figure +78,529 not +78,198; rest confirmed — 04-verify/04-verify_report_v6.md |
+| T30 | build | builder | started | v7 notes-only fix: critic v6 B1–B3 + O1–O8, verifier fix |
