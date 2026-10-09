@@ -14,3 +14,5 @@
 | T9 | brief | orchestrator | done | user confirmed Trays = Carriers → 5012 |
 | T10 | build | builder | done | v2: 0 value diffs vs v1; names 14,310→8,965; 0 externalLink parts; overlap table (0 likely double counts); I-17 Logistics&WH up to 547,441 HIGH; new I-26..I-29 |
 | T11 | build | builder | started | v3 per brief_v2 + brief_v3 (DeploySum refresh, revenue, depreciation). v2 verification folded into v3 verify |
+| T12 | build | builder | done | v3: NI 2027 +393,486; rev 15.56M; dep 3.32M (existing 1.91M + new 1.41M); 4 user decisions open (I-01, I-31, I-32, I-33) |
+| T13 | review+verify | critic, verifier | started | parallel on v3 |
