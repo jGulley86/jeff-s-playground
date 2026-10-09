@@ -23,3 +23,4 @@
 | T18 | review | critic | started | re-check v4 vs critic v3 items |
 | T19 | review | critic | done | v4: 0 BLOCKING / 3 OPTIONAL — 03-review/03-review_critic_v4.md |
 | T20 | final | orchestrator | done | 05-final/ (FINAL xlsx = v4, notes, FINAL_REPORT.md). Status COMPLETED; owner decisions open |
+| T21 | build | builder | started | v5: user-confirmed HoSD salary 205,000 → Fld Eng Budget!B21 (resolves I-26) + critic v4 N1–N3 |
