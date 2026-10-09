@@ -7,3 +7,5 @@
 | T3 | review | critic | started | read-only review of v1 |
 | T3 | verify | verifier | started | independent recompute of v1 (parallel with critic) |
 | T4 | verify | verifier | done | PASS — 04-verify/04-verify_report_v1.md |
+| T5 | review | critic | done | 3 BLOCKING / 10 OPTIONAL — 03-review/03-review_critic_v1.md; B1 partly overruled (handoff did instruct freeze) |
+| T6 | build | builder | started | v2 fixes: B1–B3 + optionals 1–8,10 |
