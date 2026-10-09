@@ -6,3 +6,4 @@
 | T2 | build | builder | done | 02-build/02-build_COO_2027_Budget_Collated_v1.xlsx + notes_v1; NI 2027 -5.28M -> -11.85M; 25 issues |
 | T3 | review | critic | started | read-only review of v1 |
 | T3 | verify | verifier | started | independent recompute of v1 (parallel with critic) |
+| T4 | verify | verifier | done | PASS — 04-verify/04-verify_report_v1.md |
