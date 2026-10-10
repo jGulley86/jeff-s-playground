@@ -52,3 +52,5 @@
 | T48 | brief | orchestrator | done | brief_v6.md: Logistics&WH payroll → CO (excl LOG-01), material handler PO→CO, add CO employee 110k; SD re-upload identical in values |
 | T49 | build | builder | started | v10 |
 | T50 | verify | verifier | started | Full re-validation sweep of v1–v9 after model switch (v10 build still running in parallel) |
+| T51 | build | builder | done | v10: Logistics&WH → CO (398,492 incl MH-01; LOG-01 excluded); new CO employee 129,806; contribution 687,435 → 159,136; HC-COO roll-up deviation accepted |
+| T52 | verify | verifier | started | v10 (parallel with v1–v9 sweep) |
