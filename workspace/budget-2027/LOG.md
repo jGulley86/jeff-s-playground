@@ -38,3 +38,5 @@
 | T32 | verify | verifier | started | v7 new figures |
 | T35 | brief | orchestrator | done | brief_v5.md: production labour capitalised (Prod Payroll model → Depreciation Schedule); repo private |
 | T36 | build | builder | started | v8 |
+| T37 | build | builder | done | v8: prod labour capitalised; contribution 139,032 → 638,814; dep +153,038; PO 5100 → 0; CIP 650,571; sensitivity (9 expensed) 37,696 |
+| T38 | review+verify | critic, verifier | started | v8 parallel |
