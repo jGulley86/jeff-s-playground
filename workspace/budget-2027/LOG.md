@@ -55,3 +55,5 @@
 | T51 | build | builder | done | v10: Logistics&WH → CO (398,492 incl MH-01; LOG-01 excluded); new CO employee 129,806; contribution 687,435 → 159,136; HC-COO roll-up deviation accepted |
 | T52 | verify | verifier | started | v10 (parallel with v1–v9 sweep) |
 | T53 | verify | verifier | done | Full v1-v9 sweep: all figures, integrity, scenarios and 9/9 chain rebuilds PASS; F1 (unsupported SD-date sentence, notes v7+) routed to next build; F2 (v7 script mode) fixed — 04-verify/04-verify_report_fullsweep.md |
+| T54 | verify | verifier | done | v10 PASS (headline 159,136.40; all claims + scenarios confirmed; 8 non-blocking notes) — 04-verify/04-verify_report_v10.md |
+| T55 | build | builder | started | v11 notes-only: F1 (SD-date sentence) + v10 verifier notes 1-3, 5-7 |
