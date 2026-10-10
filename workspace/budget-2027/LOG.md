@@ -45,3 +45,5 @@
 | T41 | build | builder | started | v9: B132=0 (2026 labour stays 2026 cost) + critic v8 B1/B2 + O1–O7 |
 | T42 | build | builder | done | v9: contribution 687,435; labour dep 104,417; CIP 650,571; idle-month (126,908) not booked; departures accepted (idle switch B135; PO U33:AF35 formula edit, zero value change) |
 | T43 | verify | verifier | started | v9 |
+| T44 | verify | verifier | done | v9 PASS — 04-verify/04-verify_report_v9.md |
+| T45 | review | critic | started | v9 re-check vs critic v8 items |
