@@ -57,3 +57,5 @@
 | T53 | verify | verifier | done | Full v1-v9 sweep: all figures, integrity, scenarios and 9/9 chain rebuilds PASS; F1 (unsupported SD-date sentence, notes v7+) routed to next build; F2 (v7 script mode) fixed — 04-verify/04-verify_report_fullsweep.md |
 | T54 | verify | verifier | done | v10 PASS (headline 159,136.40; all claims + scenarios confirmed; 8 non-blocking notes) — 04-verify/04-verify_report_v10.md |
 | T55 | build | builder | started | v11 notes-only: F1 (SD-date sentence) + v10 verifier notes 1-3, 5-7 |
+| T56 | build | builder | done | v11: 6 fixes, text-only (2 zip parts changed: Collation Notes + PO AI33:AI35); AG132 unchanged 159,136.40; build now date-independent |
+| T57 | verify | verifier | started | v11 tight scope |
