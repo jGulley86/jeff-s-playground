@@ -49,3 +49,5 @@
 | T45 | review | critic | started | v9 re-check vs critic v8 items |
 | T46 | review | critic | done | v9: 0 BLOCKING / 3 OPTIONAL — 03-review/03-review_critic_v9.md |
 | T47 | final | orchestrator | done | 05-final/*_FINAL_v3 (= v9) + FINAL_REPORT_v3.md; COMPLETED |
+| T48 | brief | orchestrator | done | brief_v6.md: Logistics&WH payroll → CO (excl LOG-01), material handler PO→CO, add CO employee 110k; SD re-upload identical in values |
+| T49 | build | builder | started | v10 |
