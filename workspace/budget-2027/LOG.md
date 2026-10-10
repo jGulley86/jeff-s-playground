@@ -59,3 +59,5 @@
 | T55 | build | builder | started | v11 notes-only: F1 (SD-date sentence) + v10 verifier notes 1-3, 5-7 |
 | T56 | build | builder | done | v11: 6 fixes, text-only (2 zip parts changed: Collation Notes + PO AI33:AI35); AG132 unchanged 159,136.40; build now date-independent |
 | T57 | verify | verifier | started | v11 tight scope |
+| T58 | verify | verifier | done | v11 PASS (2 parts changed; false sentence gone; date-independent build proven) — 04-verify/04-verify_report_v11.md |
+| T59 | final | orchestrator | done | 05-final/*_FINAL_v4 (= v11) + FINAL_REPORT_v4.md; COMPLETED |
