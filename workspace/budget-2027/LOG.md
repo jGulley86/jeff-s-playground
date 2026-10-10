@@ -51,3 +51,4 @@
 | T47 | final | orchestrator | done | 05-final/*_FINAL_v3 (= v9) + FINAL_REPORT_v3.md; COMPLETED |
 | T48 | brief | orchestrator | done | brief_v6.md: Logistics&WH payroll → CO (excl LOG-01), material handler PO→CO, add CO employee 110k; SD re-upload identical in values |
 | T49 | build | builder | started | v10 |
+| T50 | verify | verifier | started | Full re-validation sweep of v1–v9 after model switch (v10 build still running in parallel) |
