@@ -43,3 +43,5 @@
 | T39 | review | critic | done | v8: 2 BLOCKING (Q4-26 labour double count; idle-month unquantified) / 7 OPTIONAL — 03-review/03-review_critic_v8.md |
 | T40 | verify | verifier | done | v8 PASS — 04-verify/04-verify_report_v8.md |
 | T41 | build | builder | started | v9: B132=0 (2026 labour stays 2026 cost) + critic v8 B1/B2 + O1–O7 |
+| T42 | build | builder | done | v9: contribution 687,435; labour dep 104,417; CIP 650,571; idle-month (126,908) not booked; departures accepted (idle switch B135; PO U33:AF35 formula edit, zero value change) |
+| T43 | verify | verifier | started | v9 |
