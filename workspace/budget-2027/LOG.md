@@ -36,3 +36,5 @@
 | T30 | build | builder | started | v7 notes-only fix: critic v6 B1–B3 + O1–O8, verifier fix |
 | T31 | build | builder | done | v7 notes-only: 0 diffs vs v6; expensed (1,823,358)/(1,963,470) vs capitalised 74,297/69,674 vs in-unit-cost 139,032; dedup combined 2,360,882/2,439,031 |
 | T32 | verify | verifier | started | v7 new figures |
+| T35 | brief | orchestrator | done | brief_v5.md: production labour capitalised (Prod Payroll model → Depreciation Schedule); repo private |
+| T36 | build | builder | started | v8 |
