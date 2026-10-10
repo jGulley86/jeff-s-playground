@@ -41,3 +41,5 @@
 | T37 | build | builder | done | v8: prod labour capitalised; contribution 139,032 → 638,814; dep +153,038; PO 5100 → 0; CIP 650,571; sensitivity (9 expensed) 37,696 |
 | T38 | review+verify | critic, verifier | started | v8 parallel |
 | T39 | review | critic | done | v8: 2 BLOCKING (Q4-26 labour double count; idle-month unquantified) / 7 OPTIONAL — 03-review/03-review_critic_v8.md |
+| T40 | verify | verifier | done | v8 PASS — 04-verify/04-verify_report_v8.md |
+| T41 | build | builder | started | v9: B132=0 (2026 labour stays 2026 cost) + critic v8 B1/B2 + O1–O7 |
