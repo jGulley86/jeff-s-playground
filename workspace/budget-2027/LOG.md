@@ -47,3 +47,5 @@
 | T43 | verify | verifier | started | v9 |
 | T44 | verify | verifier | done | v9 PASS — 04-verify/04-verify_report_v9.md |
 | T45 | review | critic | started | v9 re-check vs critic v8 items |
+| T46 | review | critic | done | v9: 0 BLOCKING / 3 OPTIONAL — 03-review/03-review_critic_v9.md |
+| T47 | final | orchestrator | done | 05-final/*_FINAL_v3 (= v9) + FINAL_REPORT_v3.md; COMPLETED |
