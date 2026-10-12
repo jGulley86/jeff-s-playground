@@ -67,3 +67,5 @@
 | T63 | brief | orchestrator | done | User decisions 1-4 recorded; v13 = 7700/8600 + HC merge, waiting on v12 |
 | T64 | build | builder | done | v12 shipped (engine save, 0 semantic diffs, suite green). ROOT CAUSE CORRECTED: no Excel repair — user's deletion of HC-PO r20 severed PO 5110-5140 refs → #REF!. brief_v8 amended |
 | T65 | build | builder | started | v13 = brief_v7 + brief_v8 on v12 (CO 7700/8600; HC merge; PE wiring; PM→PO 6610; de-dup seats LOG-01/MH-01/TL-01/MH-02; B11 13) |
+| T66 | build | builder | done | v13: AG132 159,136 → (646,754); bridge A-G ties; roster Z totals = user file on all 4 tabs; TL end-date Nov-26 kept (A-47) |
+| T67 | review+verify | critic, verifier | started | v13 parallel |
