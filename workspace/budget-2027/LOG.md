@@ -62,3 +62,4 @@
 | T58 | verify | verifier | done | v11 PASS (2 parts changed; false sentence gone; date-independent build proven) — 04-verify/04-verify_report_v11.md |
 | T59 | final | orchestrator | done | 05-final/*_FINAL_v4 (= v11) + FINAL_REPORT_v4.md; COMPLETED |
 | T60 | build | builder | started | v12: Excel #REF! on patched rows (PO 33-35 etc.) — root cause: hand-spliced <f> XML (&apos; entities) fails Excel parse → repair strips formulas. Fix: full LibreOffice re-serialize, values identical |
+| T61 | brief | orchestrator | done | brief_v7.md: +2,000/mo GL 7700 CO, +6,500/mo GL 8600 CO (S98=24000, S106=78000); v13 queued behind v12 |
