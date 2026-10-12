@@ -64,3 +64,4 @@
 | T60 | build | builder | started | v12: Excel #REF! on patched rows (PO 33-35 etc.) — root cause: hand-spliced <f> XML (&apos; entities) fails Excel parse → repair strips formulas. Fix: full LibreOffice re-serialize, values identical |
 | T61 | brief | orchestrator | done | brief_v7.md: +2,000/mo GL 7700 CO, +6,500/mo GL 8600 CO (S98=24000, S106=78000); v13 queued behind v12 |
 | T62 | brief | orchestrator | done | brief_v8.md: user HC edits diffed (Excel-repaired copy = edit source only); 4 decisions pending; v14 queued after v12+v13 |
+| T63 | brief | orchestrator | done | User decisions 1-4 recorded; v13 = 7700/8600 + HC merge, waiting on v12 |
