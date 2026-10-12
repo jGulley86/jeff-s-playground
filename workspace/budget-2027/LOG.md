@@ -72,3 +72,5 @@
 | T68 | review | critic | done | v13: 1 BLOCKING (TL capitalised-side omission/misstated flip) + 4 OPTIONAL, all documentation — 03-review/03-review_critic_v13.md; fix folds into v14 notes pass after verifier |
 | T69 | verify | verifier | done | v13 FIX FIRST: all figures PASS incl. bridge & scenarios; stale Collation Notes text + md GP row; 2 possible user edits not carried (PO R24:R26 YOY, HC-PE A22 flag) — 04-verify/04-verify_report_v13.md |
 | T70 | build | builder | started | v14 text fixes: critic v13 B1+O1–O4, verifier stale-text sweep + md GP row; no value changes |
+| T71 | build | builder | done | v14: Collation Notes-only diff (66 text cells, 0 formula diffs, 0 violations); AG132 unchanged (646,753.85); sweep pass 1 found 31 stale occurrences, pass 2 clean; suite ALL GREEN; two-pass byte-identical; 2 user items left open (PO R24:R26 YOY, HC-PE A22) |
+| T72 | verify | verifier | started | v14 tight scope |
