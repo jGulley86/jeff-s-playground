@@ -1,5 +1,5 @@
 # Brief v8 — ingest user HC edits (v14 build, on top of v12+v13)
-New input: `00-brief/inputs/USER_EDIT_FINAL_v4_HC.xlsx` — the user's copy of FINAL_v4, edited and saved in Microsoft Excel (Mac). Excel "repair" stripped the patched formulas there (PO 33–35 etc. show #REF!), so it is an EDIT SOURCE only, never a base. Lift the user's edits; apply to the clean v12/v13 chain.
+New input: `00-brief/inputs/USER_EDIT_FINAL_v4_HC.xlsx` — the user's copy of FINAL_v4, edited and saved in Microsoft Excel (Mac). CORRECTION (v12 forensics): FINAL_v4 opened CLEAN in Excel — no repair. The #REF!s are the correct consequence of the user's own edit: deleting HC-PO row 20 (the Material Handler they moved to CO) severed the 'HC-PO'!M20:X20 subtraction inside PO 5110–5140, which Excel rewrote to #REF!. The file is a RELIABLE edit source; it is still not the base (its PO formulas are severed) — lift the edits, apply to the clean v12 chain.
 
 ## User edits found (orchestrator diff, titles only)
 - HC-CO: r18 title set to "Facilities Manager" (the 110k employee); ADD Material Handler 49,920 Sep-26 (moved from HC-PO r20); ADD MH Team Lead 57,554 Sep-26; ADD Material Flow Supervisor 85,000 Nov-26 (r35); ADD Applications Engineer 85,000 Nov-26 (r36). New roster 2027 salary 860,846.
@@ -7,7 +7,7 @@ New input: `00-brief/inputs/USER_EDIT_FINAL_v4_HC.xlsx` — the user's copy of F
 - HC-FE: ADD Associate Field Robotics Engineer 75,000 Sep-26 (= the Fld Eng Budget r15 person; the I-28 duplicate).
 - HC-PE: ADD Purchasing Analyst 85,000 Jan-27; Launch Planner 75,000 Nov-26; Quality Engineer 100,000 Dec-26; Manufacturing Engineer 110,000 Dec-26; Strategic Sourcing Lead 120,000 Oct-26. Roster 2027 salary 1,571,695 (+493,675).
 - CO U98/U106 blocks: user typed 2,000/6,500 monthly constants (= brief_v7 request; v13 implements natively; do NOT copy the constants).
-- Other sheet diffs in their file are Excel re-save artifacts or #REF! damage; ignore.
+- Other sheet diffs in their file are Excel re-save artifacts or #REF! propagation from the severed PO refs; ignore.
 
 ## Open user decisions (asked 2026-10-12; do not build v14's ambiguous parts without answers)
 1. Wire PE 6610–6640 to HC-PE roster totals (like CO)? Recommended yes.
