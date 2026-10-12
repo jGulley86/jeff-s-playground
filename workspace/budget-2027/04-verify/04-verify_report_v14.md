@@ -1,0 +1,10 @@
+# Verifier report v14 — VERDICT: FIX FIRST (two stale evidence-text cells; every figure PASS)
+Own scripts (scratch verify14/). Workspace untouched; v14 sha256 matches the builder's.
+
+CONFIRMED: only Collation Notes changed (31 in-place + 35 new cells; 0 formula diffs anywhere; other 19 sheets value-identical; one cosmetic column-width drift on HC-COO). AG132 = (646,753.846833) cached and from a cache-stripped full recalc; 29,021 numeric cells reproduce with max diff 0.0; roll-up max 5.8e-10; 0 error caches; 0 shared formulas; H78:H81 = 0. Bridge re-derived: (102,000.00) + (71,048.29) + (554,864.53) + (156,506.51) − 78,529.08(sign: +) + 0 = (805,890.25) to the cent. All v13-flagged stale cells now correct (E17 scenario set, A32 (3,095,044), counts = 11 everywhere, C43/C47/C60/C61/F357/row 377/D380/A35, md GP row 3,960,032/+78,529). B1 wording verified by recalculation: the F20 flip alone adds only CO expense (r16 stays in the base and the by-number model — 0 refs from Prod Payroll/Depreciation Schedule to HC-PO); departed-person branch quantified (B131=0 base 518,256.91; scenario (1,133,689.50)). A-46 recipe matches the live formulas (61,962.70 out / 100,304.86 in / net +38,342.16). Open item PO!R24:R26 re-run: AG132 (706,810.44), delta (60,056.60).
+
+FAILED (criterion 4): two stale v12-era evidence sentences outside the swept rows — Collation Notes E346 (I-06: "14 each month … 1,094,774"; now 13 / 1,016,575.56) and E352 (I-12: "AG46 288,069"; now 287,738.40). No figure depends on either.
+
+Optional nits: H381 sign-convention wording; per-head clarification in the left-at-Nov-26 branch; D357 superseded pointer; I-29 evidence stale since v10; two cosmetic layout items. $1 print nit: 3,036,558 vs exact 3,036,558.86.
+
+ORCHESTRATOR RULING: ship FINAL_v5 from v14 as-is; disclose E346/E352 (and the optional nits) as known stale text in the final report; fold the fixes into the next build alongside the user's four pending confirmations. (Verifier's own note endorses this path; no figure depends on the stale cells.)

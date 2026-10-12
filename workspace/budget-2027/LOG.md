@@ -74,3 +74,5 @@
 | T70 | build | builder | started | v14 text fixes: critic v13 B1+O1–O4, verifier stale-text sweep + md GP row; no value changes |
 | T71 | build | builder | done | v14: Collation Notes-only diff (66 text cells, 0 formula diffs, 0 violations); AG132 unchanged (646,753.85); sweep pass 1 found 31 stale occurrences, pass 2 clean; suite ALL GREEN; two-pass byte-identical; 2 user items left open (PO R24:R26 YOY, HC-PE A22) |
 | T72 | verify | verifier | started | v14 tight scope |
+| T73 | verify | verifier | done | v14: all figures PASS; 2 stale evidence cells (E346/E352) — ruling: ship + disclose — 04-verify/04-verify_report_v14.md |
+| T74 | final | orchestrator | done | 05-final/*_FINAL_v5 (= v14) + FINAL_REPORT_v5.md; COMPLETED; 4 user confirmations open |
