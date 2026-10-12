@@ -70,3 +70,5 @@
 | T66 | build | builder | done | v13: AG132 159,136 → (646,754); bridge A-G ties; roster Z totals = user file on all 4 tabs; TL end-date Nov-26 kept (A-47) |
 | T67 | review+verify | critic, verifier | started | v13 parallel |
 | T68 | review | critic | done | v13: 1 BLOCKING (TL capitalised-side omission/misstated flip) + 4 OPTIONAL, all documentation — 03-review/03-review_critic_v13.md; fix folds into v14 notes pass after verifier |
+| T69 | verify | verifier | done | v13 FIX FIRST: all figures PASS incl. bridge & scenarios; stale Collation Notes text + md GP row; 2 possible user edits not carried (PO R24:R26 YOY, HC-PE A22 flag) — 04-verify/04-verify_report_v13.md |
+| T70 | build | builder | started | v14 text fixes: critic v13 B1+O1–O4, verifier stale-text sweep + md GP row; no value changes |
